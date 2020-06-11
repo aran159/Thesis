@@ -265,3 +265,52 @@ Note how the \verb2\hyperref2 package
 also makes hyperlinks from references
 (e.g., Mulick\cite{mulick})
 to entries in the bibliography.
+
+\section{Code}
+
+\subsection{C++}
+
+\lstset
+{
+    language=C++,
+    keywordstyle=\color{blue},
+    stringstyle=\color{red},
+    commentstyle=\color{green},
+    morecomment=[l][\color{magenta}]{\#},
+    basicstyle=\linespread{0.95}\ttfamily,
+    frame=top,
+    frame=bottom,
+    escapeinside={(*}{*)},
+    numbers=right,
+    % breaklines=true,
+    aboveskip=1.5em,
+    % belowskip=1em,
+}
+
+Text before \dots
+
+\newcounter{codecounter}
+\begin{lstlisting}
+for (int i = 0; i < iterations; i++)
+{
+    // Check
+    i++;
+    std::cout << "asdfasdf" << std::endl; (*\label{code:printf}*)
+}
+\end{lstlisting}
+
+We produce the output in line \ref{code:printf}.
+
+\subsection{Python}
+
+Text before \dots
+
+\begin{lstlisting}[language=Python]
+for (int i = 0; i < iterations; i++)
+{
+    for i in range(5):
+        print("Go home.") (*\label{code:print}*)
+}
+\end{lstlisting}
+
+We produce the output in line \ref{code:print}.
