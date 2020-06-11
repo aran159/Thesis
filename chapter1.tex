@@ -1,84 +1,8 @@
 \chapter{Introduction}
 \label{introchap}
 
-asdfasdf
-
 propósito y los objetivos, la motivación
 el alcance (cronológico, geográfico, tipológico, etc.) su justificación,
 fecha de cierre de las diferentes etapas del trabajo.
 Background and related work
 un comentario general sobre los documentos consultados y la metodología empleada
-
-\textbf{Current technology and issues}
-
-Traditional robots are built to achieve superhuman levels of precision and throughput, and to this end they
-are designed to maximize rigidity at the expense of compliance and safety. This severely limits their physical
-interaction capabilities, since compliance allows a robot to be safe to itself and others.
-To alleviate this issue, a growing trend has been to embrace compliance by design, in order to allow robots to interact robustly and continuously with the external world through their elasticity. This has led to two partially-overlapping—but
-not mutually exclusive—trends in robotics:
-
-\begin{enumerate}
-    \item{\textbf{passive compliance}}, where the robot is equipped with one or
-more mechatronic devices or control solutions that intrinsically comply with the environment.
-    \item{\textbf{active
-compliance}}, where the robot is moved by a control law so as to react to interactions with the environment—
-as measured by an appropriate sensor, for example a force/torque sensor placed at the end-effector of the
-manipulator.
-\end{enumerate}
-
-The literature on passive and active compliance is rather extensive, and it is an area of active
-research. These are three \textbf{main issues with passive and active compliance}:
-
-\begin{enumerate}
-    \item{\textbf{Passive compliance is disruptive in nature and not backward compatible}}. Passive compliance
-generally consists in:
-    \begin{itemize}
-        \item \textbf{Limiting the torque and speed capabilities of the robot}. The cost is reducing the agility of the robot.
-        \item \textbf{Designing lightweight structures with elastic components}. The cost is reducing the accuracy of the robot.
-    \end{itemize}
-
-Furthermore, many design decisions need to be integrated into the plant \textit{a priori} for the
-robot to fulfill its safety role. Any modification in the plant design requires a new version to be prototyped. For this reason such solutions poorly conform to existing robots or existing non-modifiable platforms.
-    \item{\textbf{Active compliance is hampered by a trade-off between density of information and quality of the
-data carried through by the sensor}}. Active compliance is usually mediated by a sensor capable of measuring
-the interaction of the robot with its environment. This sensor is usually of either type:
-        \begin{itemize}
-            \item \textbf{low-density and highly informative}. e.g. a single force/torque sensor placed on the wrist that is able to detect contacts at the end-effector but
-not at the rest of the body.
-            \item \textbf{high-density and carrying little information}, such as a set of cameras or depth
-sensors that are far from the physical interaction and easily tricked by occlusions and clutter.
-        \end{itemize}
-
-    \item{\textbf{Most solutions are \textit{ad-hoc}, not portable and not scalable}}. In both active and passive compliance, the vast majority of
-solutions available in the literature suffer from being provisional and difficult to port to different platforms
-and applications. This impedes them from becoming the \textit{de-facto} standard for robotics: although some
-attempts have been made in the past (see the Baxter and Sawyer robots from Rethink Robotics \cite{rethinkrobotics}), few
-commercially available platforms to date are equipped with either active or passive compliance.
-\end{enumerate}
-
-\textbf{Characteristics of tactile sensing and how they can be useful to mitigate current issues that passive and active compliance have }
-
-The majority of the aforementioned issues can be mitigated by employing the adequate artificial tactile sensing technology to detect the interaction between the robot and its environment. In this document, we define tactile sensing in the broadest sense, \textit{i.e.} leveraging different sensors distributed along the robot body to measure physical interaction with the environment. Differently from the technologies detailed above (depth sensors and fore/torque sensors), the tactile sensing technology can be characterized by the following features:
-
-\begin{enumerate}
-    \item It is \textbf{high-density}: whole-body artificial skins can reach a density of up to 10 $ \frac{sensors}{cm^2}$ (REFERENCIASSSSS[51, 67]), which is significantly higher than the sparse, point- like signals provided by the force/torque sensors or joint torque sensors that are typically used for active compliance solutions.
-    \item It is \textbf{distributed}: similar to our own sense of touch, the presence of distributed and heterogeneous sensors allows for redundancy, which means being more robust to noise and sensor failure. It also allows a greater amount of information to be collected (useful for sensing and 3D reconstruction).
-    \item It is \textbf{highly informative}: proximity and pressure feedback is as close to the interaction itself as it can possibly be and this allows for the design of local, computationally efficient controllers that leverage high-density, high-frequency feedback to safely react to incoming threats and minimize damage to the robot and its environment.
-    \item It is \textbf{mechanically conformant} and capable of adapting to a wide variety of body shapes and configurations, to allow tighter mechanical integration and more accurate sensing of the physical interaction.
-\end{enumerate}
-
-\textbf{Motivation and objectives}
-
-Given WHAT HAS BEEN SAID, objectives:
-
-\begin{enumerate}
-    \item \textbf{We think that for robots to be deployed at scale and safely interact with their environment and people, they need to be equipped with high-resolution, heterogeneous tactile sensing}. A flexible framework for design and integration of artificial tactile sensing capabilities on robot manipulators is proposed. This includes, but is not limited to pressure sensing capabilities, which are at the foundation of our own sense of cutaneous touch. Similarly to biological systems REFERENCE[17], robots can also benefit from heterogeneity of sensing, such as contact force and hardness, temperature, proximity or acceleration.
-
-    Unfortunately, to date there is no such technology, and current architectures are limited in both depth and breadth of what they can detect (refer to BACKGROUND AND RELATED WORK for detailed information on the topic). That is why this technology is being developed and tested by the team developing this project. The problem is tackled from the electronics and material science perspectives.
-
-    \item \textbf{The lack of widespread adoption of whole-body artificial skins is due to inflexibility of hardware designs, difficulty of system integration}. To this end, we will firstly devise an automated framework for calibrating the location of each sensor with respect to the kinematics of the robot manipulator they are mounted on. The result will be a plug-and-play system that allows to make use of different hardware functionality in response to different specifications and operational needs: that is, future applications will be able to inform new designs that can be then quickly integrated into the platform of interest.
-
-    \item \textbf{The proposed skin capabilities will open up a new breadth of distributed algorithms and controllers capable of demonstrating novel robot behaviors}. From the passive compliance point of view, soft artificial skins automatically provide a layer of passive compliance to the robot plant. On the other hand, regarding active compliance, proximity sensing will be also employed to design compact and self-contained controllers. This controllers we will leverage whole-body, distributed information to maintain operational safety and improve performance in presence of high-level tasks such as grasping.
-
-
-\end{enumerate}
