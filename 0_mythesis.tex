@@ -1,0 +1,88 @@
+\documentclass[defaultstyle,11pt]{thesis}
+
+\usepackage{amssymb}		% to get all AMS symbols
+\usepackage{graphicx}		% to insert figures
+\usepackage{hyperref}		% PDF hyperreferences??
+
+%%%%%%%%%%%%   All the preamble material:   %%%%%%%%%%%%
+
+\title{Proximity-informed robot control through whole-body artificial skin}
+
+\author{A.}{Aranburu Fernández}
+
+\otherdegrees{B.A., UPV/EHU Euskal Herriko Unibertsitatea, 2017 \\
+			  M.S., UPC Universitat Politecnica de Catalunya, 2020}
+
+\degree{Master of Science}		%  #1 {long descr.}
+	{M.S., Industrial Engineering}		%  #2 {short descr.}
+
+\dept{Department of}			%  #1 {designation}
+	{Computer Science}		%  #2 {name}
+
+\advisor{Prof.}				%  #1 {title}
+	{Alessandro Roncone}			%  #2 {name}
+
+\reader{needed?}		%  2nd person to sign thesis
+\readerThree{needed?}		%  3rd person to sign thesis
+
+\abstract{  \OnePageChapter	% because it is very short
+    Abstract text. Abstract text. Abstract text. Abstract text. Abstract text. Abstract text. Abstract text. Abstract text. Abstract text. Abstract text. Abstract text. Abstract text. Abstract text. Abstract text. Abstract text. Abstract text. Abstract text. Abstract text. Abstract text. Abstract text. Abstract text. Abstract text. Abstract text. Abstract text. Abstract text. Abstract text.
+
+	Often the abstract will be long enough to require
+	more than one page, in which case the macro
+	``$\backslash$OnePageChapter'' should {\it not}
+	be used.
+
+	But this one isn't, so it should.
+	}
+
+\dedication[Dedication]{	% NEVER use \OnePageChapter here.
+	To all of the fluffy kitties.
+	}
+
+\acknowledgements{	\OnePageChapter	% *MUST* BE ONLY ONE PAGE!
+	Here's where you acknowledge folks who helped.
+	But keep it short, i.e., no more than one page,
+	as required by the Grad School Specifications.
+	}
+
+% \IRBprotocol{E927F29.001X}	% optional!
+
+\ToCisShort	% use this only for 1-page Table of Contents
+
+\LoFisShort	% use this only for 1-page Table of Figures
+% \emptyLoF	% use this if there is no List of Figures
+
+\LoTisShort	% use this only for 1-page Table of Tables
+% \emptyLoT	% use this if there is no List of Tables
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%       BEGIN DOCUMENT...         %%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{document}
+
+\input macros.tex
+\input chapter1.tex
+\input chapter2.tex
+\input chapter3.tex
+\input chapter4.tex
+\input chapter5.tex
+\input example_chapter1.tex
+\input example_chapter2.tex
+
+%%%%%%%%%   then the Bibliography, if any   %%%%%%%%%
+\bibliographystyle{plain}	% or "siam", or "alpha", etc.
+\nocite{*}		% list all refs in database, cited or not
+\bibliography{example_refs}		% Bib database in "refs.bib"
+
+El conjunto de documentos consultados, citados o no, a lo largo del trabajo, forman la bibliografía que se presenta al final del trabajo ordenada cronológicamente o alfabéticamente. Las bibliografías ordenadas por temas, con comentarios o sin, que sirven para presentar el estado de la cuestión con documentos que no han sido citados a lo largo del trabajo se suelen dar como anexo.
+
+%%%%%%%%%   then the Appendices, if any   %%%%%%%%%
+\appendix
+
+\input example_appendixA.tex
+\input example_appendixB.tex
+
+
+\end{document}
