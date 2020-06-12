@@ -5,6 +5,8 @@
 \usepackage{hyperref}		% PDF hyperreferences??
 \usepackage{listings}
 \usepackage{xcolor}
+\usepackage{caption}
+\usepackage{blindtext}
 
 %%%%%%%%%%%%   All the preamble material:   %%%%%%%%%%%%
 
@@ -28,6 +30,9 @@
 \readerThree{needed?}		%  3rd person to sign thesis
 
 \abstract{  \OnePageChapter	% because it is very short
+
+\blindtext[2]
+
 After conclusions.
 
 Conclusions smaller.
@@ -60,6 +65,39 @@ Conclusions smaller.
 % \LoTisShort	% use this only for 1-page Table of Tables
 \emptyLoT	% use this if there is no List of Tables
 
+% Set C++ Code format
+\lstset
+{
+    language=C++,
+    keywordstyle=\color{blue},
+    stringstyle=\color{red},
+    commentstyle=\color{green},
+    morecomment=[l][\color{magenta}]{\#},
+    basicstyle=\linespread{0.95}\ttfamily,
+    frame=top,
+	frame=bottom,
+	% frame=left,
+	% frame=right,
+    escapeinside={(*}{*)},
+    numbers=right,
+    % breaklines=true,
+    aboveskip=1.5em,
+	% belowskip=1em,
+	% backgroundcolor=\color{lightgray},
+}
+
+\lstloadlanguages{ % Check documentation for further languages ...
+     % [Visual]Basic,
+     % Pascal,
+     % C,
+     C++,
+     % XML,
+     % HTML,
+	%  Java,
+	Python
+}
+\newcounter{codecounter}
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%       BEGIN DOCUMENT...         %%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -72,8 +110,8 @@ Conclusions smaller.
 \input chapter3.tex
 \input chapter4.tex
 \input chapter5.tex
-\input example_chapter1.tex
-\input example_chapter2.tex
+% \input example_chapter1.tex
+% \input example_chapter2.tex
 
 %%%%%%%%%   then the Bibliography, if any   %%%%%%%%%
 \bibliographystyle{plain}	% or "siam", or "alpha", etc.
@@ -85,8 +123,8 @@ El conjunto de documentos consultados, citados o no, a lo largo del trabajo, for
 %%%%%%%%%   then the Appendices, if any   %%%%%%%%%
 \appendix
 
-\input example_appendixA.tex
-\input example_appendixB.tex
+% \input example_appendixA.tex
+% \input example_appendixB.tex
 
 
 \end{document}

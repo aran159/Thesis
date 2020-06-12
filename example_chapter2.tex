@@ -270,27 +270,9 @@ to entries in the bibliography.
 
 \subsection{C++}
 
-\lstset
-{
-    language=C++,
-    keywordstyle=\color{blue},
-    stringstyle=\color{red},
-    commentstyle=\color{green},
-    morecomment=[l][\color{magenta}]{\#},
-    basicstyle=\linespread{0.95}\ttfamily,
-    frame=top,
-    frame=bottom,
-    escapeinside={(*}{*)},
-    numbers=right,
-    % breaklines=true,
-    aboveskip=1.5em,
-    % belowskip=1em,
-}
-
 Text before \dots
 
-\newcounter{codecounter}
-\begin{lstlisting}
+\begin{lstlisting}[caption={example.cpp},captionpos=b]
 for (int i = 0; i < iterations; i++)
 {
     // Check
@@ -305,7 +287,7 @@ We produce the output in line \ref{code:printf}.
 
 Text before \dots
 
-\begin{lstlisting}[language=Python]
+\begin{lstlisting}
 for (int i = 0; i < iterations; i++)
 {
     for i in range(5):
