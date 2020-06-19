@@ -1,40 +1,50 @@
 \chapter{Technical Approach}
-\label{techchap}
+\label{ch:tec}
 
+In this chapter we will explain the technical means by which the objective of this thesis has been approached. Firstly, in section \ref{s:pre} we start talking about the WHAT… (Franka Emika, The \emph{Robot Operating System} (ROS), \emph{Gazebo}). In order to make the robot avoid obstacles with proximity data, obstacles need to be located with respect to the robots’ kinematic chain. In section \ref{s:calibration} we briefly present a framework for automatic kinematic calibration that leverages an IMU to accurately estimate the pose (position and orientation) of skin units along the surface of a robot. In section \ref{s:control} the methods for obstacle avoiding control are presented.
 
-https://h2r.cs.brown.edu/writing-a-technical-paper/
+\section{Preliminaries}
+\label{s:pre}
+\subsection{ROS}
 
-Intercalate code
+The Robot Operating System (ROS) is an open source robot middleware or robot development environment (RDE), one of many available in the market. Robot middleware \cite{elkady2009middlew} is an abstraction layer that resides between the operating system (OS) and software applications (figure \ref{fig:middleware}). Its purpose is to provide a framework and  take care of several important parts of an application development, so that the developer needs only to build the logic or algorithm as a component.
 
-\section{Basic components}
+\begin{figure}[htbp]
+    \caption[Robotic middleware]{
+        Robotic middleware \cite{elkady2009middlew}
+    }
+    \begin{center}
+    \includegraphics[width=45mm]{figs/middleware.png}
+    \end{center}
+\label{fig:middleware}
+\end{figure}
 
-overview of methods. All of the basic components
+ROS’s main concept is its runtime graph: a peer-to-peer network of loosely coupled components or nodes that use the ROS communication infrastructure. ROS implements several different means of communication:
 
-Mention this because they are important for my work.
+\begin{itemize}
+    \item
+\end{itemize}
 
-Jacobian
+Example
 
-Inverse kinematics
+\begin{figure}[htbp]
+    \caption[ROS graph]{
+        ROS graph
+    }
+    \begin{center}
+    \includegraphics[width=165mm]{figs/rosgraph.png}
+    \end{center}
+\label{fig:rosgraph}
+\end{figure}
 
-Linear system with redundancy
+The ROS Master enables nodes to find each other and to communicate. It also holds the parameter server, which provides a central storage location for data that is relevant for several nodes. It serves, broadly speaking, as a place where global variables can be stored and retrieved by nodes. Examples of things that are stored in the parameter server are PID control parameters, the robot’s urdf description and frequencies at which different components that live in the graph work.
 
-ROS
+Last, it should be mentioned that despite the fact that ROS is widely used in the academic context, it is lacking reliability and robustness safety critical systems in industrial or commercial contexts require. Some of the industrial fields, such as the automotive and the aerospace, have their own standards for development of safety-critical software. These standards need to be certified for every software component written in any of these fields. ROS was not developed to any of these standards and it actually depends on many libraries that were not developed to this standards. ROS 2, in contrast, is based on components that are safety-certified (DDL) and makes ROS 2 certifiable. Indeed, Apex.AI is working on Apex.OS: an API compatible to ROS 2 that is being certified ISO 26262 for safe automotive applications \cite{apexOS}.
 
+\subsection{Panda robot by Franka Emika}
 
-
-Wait for this last part
-
-\section{My methods}
-
-My methods. Just implementation in this document.
-
-(Calibration?)
-
-Flacco
-
-QP
-
-\subsection{Kinematic Calibration}
+\section{Kinematic Calibration}
+\label{s:calibration}
 
 We present a framework for automatic kinematic calibration that leverages an
 IMU to accurately estimate the pose (position and orientation) of skin units,
@@ -72,9 +82,9 @@ Our optimization algorithm is composed of the following \textbf{four steps}:
     $$
     {}^{i}T_{i+1} =
         \left[ \begin{array}{c|c}
-            {}^{i}R_{i+1} & {}^{i}P_{i+1} \\
+            {}^{i}R_{i+1} & {}^{i}\mathbf{p}_{i+1} \\
             \hline
-            \mathbf{0} & \mathbf{1} \\
+            \mathbf{0} & 1 \\
         \end{array}\right].
     $$
 
@@ -87,12 +97,12 @@ Our optimization algorithm is composed of the following \textbf{four steps}:
     \item \paragraph{Define an error function.}
     Acceleration exerted on each SU ${}^{SU_i}a_{u,d}$ can be estimated as a composition of local acceleration,
     tangential acceleration and centripetal acceleration:
-    $$^{RS}\vec{a}_{t a n_{u, d}} = ^{R S} \overrightarrow{\alpha_{d}} \times^{R S} \vec{r}_{u, d}$$
+    $$^{RS}\mathbf{a}_{t a n_{u, d}} = ^{R S} \mathbf{\alpha}_{d} \times^{R S} \mathbf{r}_{u, d}$$
 
-    $$^{RS}\vec{a}_{cp_{u, d}} = ^{R S} \vec{\omega}_{d} \times\left(^{R S} \vec{\omega}_{d} \times^{R S} \vec{r}_{u, d}\right)$$
+    $$^{RS}\mathbf{a}_{cp_{u, d}} = ^{R S} \mathbf{\omega}_{d} \times\left(^{R S} \mathbf{\omega}_{d} \times^{R S} \mathbf{r}_{u, d}\right)$$
 
-    $$^{SU_{i}}\vec{a}_{u, d} = ^{SU_{i}}\underline{R}_{R S} \cdot\left(^{R S} \vec{g}+^{R S} \vec{a}_{t a n_{u}, d}+^{R S} \vec{a}_{c p_{u, d}}\right).$$
-    Angular velocity $\omega$ and angular acceleration $\alpha$ are measured during data collection, whereas rotation matrix $R$ and position vector $P$ can be computed using the current estimated DH parameters.
+    $$^{SU_{i}}\mathbf{a}_{u, d} = ^{SU_{i}}\underline{R}_{R S} \cdot\left(^{R S} \mathbf{g}+^{R S} \mathbf{a}_{t a n_{u}, d}+^{R S} \mathbf{a}_{c p_{u, d}}\right).$$
+    Angular velocity $\mathbf{\omega}$ and angular acceleration $\mathbf{\alpha}$ are measured during data collection, whereas rotation matrix $R$ and position vector $\mathbf{p}$ can be computed using the current estimated DH parameters.
 
     One example error function could be seen as the error between the measured accelerations from the IMUs and the estimated accelerations using the kinematic chain model for $n_{pose}$ poses [2]:
     $$E = \sum_{i=1}^{n_{pose}} \sum_{j=1}^{n_{joint}} ||a^{model}_{i,j} - a^{IMU}_{i,j}||^2$$
@@ -111,3 +121,12 @@ Our optimization algorithm is composed of the following \textbf{four steps}:
     \end{center}
 \label{fig:calibration_result}
 \end{figure}
+
+\section{Control}
+\label{s:control}
+
+Jacobian
+
+Inverse kinematics
+
+Linear system with redundancy
