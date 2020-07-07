@@ -1,9 +1,10 @@
 \chapter{Introduction}
 \label{introchap}
 
-We stand on the threshold of a new era in robotic technology that will fundamentally change how we live and work. This robotic revolution will approach and surpass the ubiquity and usefulness of the computer revolution, because robots can change not only the virtual world, but the physical world as well. (https://h2r.cs.brown.edu/about/)
+\section{Human-Robot Interaction}
+We are on the threshold of a new era in robotic technology that will change our lives in the way we live and work. This robotic revolution has the potential to surpass the ubiquity and usefulness of the computer revolution, if only because robots can change not only our virtual world, but the physical world also. (https://h2r.cs.brown.edu/about/)
 
-One of the main fields of research working on the expansion of these abilities to interact with the physical world is \textbf{human robot interaction} (HRI). HRI deals with the general problem of integrating robots in human populated environments. There are a number of ways in which robotics can be impactful to society in the short- mid- term. Some examples:
+One of the main fields of research working on the expansion of these abilities to interact with the physical world is human-robot interaction (HRI). HRI deals with the general problem of integrating robots in human-populated environments. There are a number of ways in which robotics can be impactful to society in the short- mid- term. Some examples:
 
 \begin{itemize}
     \item Hospital robots will check on patients and report their status to nurses, saving time and improving patient outcomes.
@@ -11,23 +12,15 @@ One of the main fields of research working on the expansion of these abilities t
     \item Manufacturing robots will collaborate with people to assemble complex objects on reconfigurable assembly lines, increasing the efficiency and flexibility of factory floors.
 \end{itemize}
 
-The transition of robots from restricted access areas to human populated environments comes with a number of problems that research needs to overcome, being safety one of the key issues that needs to be addressed. Traditionally, safety in industrial robots has been achieved isolating them in a cell with safety interlocks to prevent direct interaction. HRI contributions will only be feasible once coexistence of robots and humans does not come with serious injury risk.
 
-In order to achieve this behaviour, robots are expected to adapt to the changes in their environment. This is why it is important to study how humans interact with their environment.
+The transition of robots from restricted access areas to human-populated environments comes with a number of problems that research needs to overcome, being safety one of the key issues that need to be addressed. Traditionally, safety in industrial robots has been achieved isolating them in a cell with safety interlocks to prevent direct interaction. HRI contributions will only be feasible once the coexistence of robots and humans does not come with serious injury risk.
 
-Interaction between a human being and its environment is accomplished through senses. One important aspect research in robotics has focused in has been to look for ways to emulate and exploit these human senses. For example, visual sensing has been widely explored in this field. One of the reasons is the development of new low-cost depth sensors such as the Microsoft Kinect \textsuperscript{TM} has allowed to meet the many requirements of vision application at an affordable price. These depth sensors are capable of acquiring 2D images as well as the distances of the objects represented in each pixel to the camera. The usual way this data is used is to reassemble representations of obstacles in a robot-oriented space.
+\section{Human senses and sensors in robotics}
+In order to achieve the safety requirements of HRI, robots are expected to adapt to the changes in their environment the way humans do. This is why it is important to study how humans interact with their environment.
 
-Other human senses are of great importance for the acquisition of data relevant to the interaction with their surroundings. Touch is one of them. Tactile sensing is the most fundamental sense when contacting the external world and it is the biggest and oldest of the sensorial organs. An experiment that consisted of exploring objects after anesthetizing the hands of a control group demonstrates that the simple task of maintaining a stable grasp of objects becomes surprisingly difficult when sense of touch is suppressed. Their hand movements are inaccurate and unstable \cite{westling1984factors}. In another experiment carried on by astronauts at the International Space Station, sense of touch was proven to be an important indicator of direction and spatial disorientation \cite{van2006touch}. Sense of touch is crucial when experiencing object properties, such as size, shape, texture and temperature. It informs about slip. It is essential to develop awareness of the body and in consequence, to differentiate one’s body from the rest of one’s surroundings. Its absence seriously hinders the interaction of an individual with its environment \cite{dahiya2009tactile}.
+Interaction between a human being and its environment is accomplished through its senses. One important aspect research in robotics has focused on has been to look for ways to emulate and exploit these human senses. For example, visual sensing has been widely explored in this field. One of the reasons is the development of new low-cost depth sensors such as the Microsoft Kinect \textsuperscript{TM} has allowed to meet the many requirements of vision application at an affordable price. These depth sensors are capable of acquiring 2D images as well as the distances of the objects represented in each pixel to the camera. The usual way this data is used is to reassemble representations of obstacles in a robot-oriented space.
 
-\begin{figure}[htbp]
-    \caption[Astronauts]{
-    Astronauts carrying on the experiment in ``Touch down:  the effect of artificial touch cues onorientation in microgravity''. \cite{van2006touch}
-    }
-    \begin{center}
-    \includegraphics[width=100mm]{figs/astronauts.jpg}
-    \end{center}
-    \label{fig:astronauts}
-\end{figure}
+However, other human senses are of great importance for the acquisition of data relevant to the interaction with their surroundings. Touch is one of them. Tactile sensing is the most fundamental sense when contacting the external world and it is the biggest and oldest of the sensorial organs. An experiment that consisted of exploring objects after anesthetizing the hands of a control group demonstrated that the simple task of maintaining a stable grasp of objects becomes surprisingly difficult when sense of touch is suppressed. Their hand movements are inaccurate and unstable \cite{westling1984factors}. In another experiment carried on by astronauts at the International Space Station, sense of touch was proven to be an important indicator of direction and spatial disorientation \cite{van2006touch}. Sense of touch is crucial when experiencing object properties, such as size, shape, texture and temperature. It informs about slip. It is essential to develop awareness of the body and in consequence, to differentiate one’s body from the rest of one’s surroundings. Its absence seriously hinders the interaction of an individual with its environment \cite{dahiya2009tactile}.
 
 However, tactile sensing in robotics has not been able to achieve the penetration this evidence suggests it should have had. In traditional industrial robots, this importance has been ignored. Engineers have been able to avoid the issue of developing a artificial sensor that emulates touch by using prior knowledge about the object to be manipulated and the environment. The limitations of this approach are obvious: robots are only capable of working in structured and controlled environments. https://www.sciencedirect.com/science/article/pii/S0921889015001621
 
@@ -36,9 +29,27 @@ The result is that research and technology in artificial tactile sensors is not 
 \begin{itemize}
     \item\textbf{Pressure sensing arrays.} Pressure sensor matrix that provides information about the location and amount of pressure exerted on a surface.
     \item\textbf{Force-torque sensors.} They give feedback about the forces and torques that are applied on a given point in the 3 geometric axes.
-    \item\textbf{Dynamic tactile sensors.} If you press your finger against an object’s corner, you can feel it for as long as you hold your finger in place. If you slowly rest your finger on the table, in contrast, you feel relatively little, until you start moving it gently back and forth. Suddenly, you are able to feel the texture, dustiness, scratches and a breadth of the properties the object has. These sensations are provided by the dynamic, fast acting tactile sensors that are embedded in the skin.
+\item\textbf{Dynamic tactile sensors.} If you press your finger against an object’s corner, you can feel it for as long as you hold your finger in place. If you slowly rest your finger on the table, in contrast, you feel relatively little, until you start moving it gently back and forth. Suddenly, you are able to feel the texture, dustiness, scratches and a breadth of the properties the object has. These sensations are provided by the dynamic, fast acting tactile sensors that are embedded in the skin.
     \item\textbf{Detect changing light levels.}  https://www.wired.com/story/this-clever-robotic-finger-feels-with-light/
 \end{itemize}
 
+\section{Whole-body artificial skins}
+Current research is focused on developing tactile skins that cover robot end effectors and hands with a number of tactile sensors, in parallel with devising new algorithms that make use of these new sensors for dexterous object manipulation (\cite{tianFeel} \cite{wilson2020design}).
 
-Current research is focused on developing tactile skins that cover robot end effectors and hands with a number of tactile sensors, in parallel with devising new algorithms that make use of these new sensors for dexterous object manipulation. However, whole body.
+However, whole-body artificial skins have not gained the same attention as end-effector coverings. In fact, this type of skins can be of great importance in the transition of robots to operating alongside humans and the new safety issues that arise with it.
+
+Traditional robots have been designed for precision and performance at expenses of compliance. Compliance is essential for interaction and extensive research has been conducted to deal with the issue, leading to two paradigms: passive and active compliance.  Passive compliance aims to achieve safety through physical adaptation to the environment, by the use of flexible parts and mechanisms or by limiting capabilities such us speed. Active compliance, in contrast, relies on algorithms and control laws for reactive interaction with the environment. Both approaches are not mutually exclusive.
+
+Both approaches have some important limitations, though. Passive compliance achieves safety at the cost of reducing accuracy, in the case of using flexible parts, and agility when the capabilities of the robot are reduced. Active compliance makes use of not suitable sensors, which provide either a high amount of low-quality information regarding the task, as in the case of the aforementioned depth cameras or a limited amount of relevant data, as force-torque sensors located at the robot’s joints. In addition, both solutions are currently lacking in flexibility. New problems require completely new designs. This may be one of the reasons why none of the solutions have become the established standard in robotics.
+
+Whole-body artificial skins have the potential to solve all of these issues, providing high-density relevant information, that is as close to the particular task of collision avoidance as it gets. At the same time, it can also be designed to be mechanically compliant to the environment.
+
+In addition, the skin can be equipped with heterogeneous sensing so that a greater amount of high-quality information is collected. Tactile data is only useful when contact has been established between the robot and the environment. However, collisions can be actively avoided before establishing undesired contact by choosing suitable pre-impact strategies. That is why adding proximity sensing capabilities to the skin opens up new possibilities in terms of safety robot control. The addition of proximity sensors allows a enables a compact, external motion capture system free system, with highly informative prior-to-contact data. This combined with lighter data, the main problems of depth-sensing are solved: occlusion is never again a problem and computational costs are greatly reduced.
+\section{Control and collision avoidance}
+From the control perspective, using proximity data for the safe movement of a robot might prevent performing the main task when any undesired object obstructs the desired trajectory. Nonetheless, this does not have to be the case if a redundant robot is used.
+
+A robot is redundant if the number of degrees of freedom (DoF) $n$ is bigger than the degrees of freedom needed for the task $m$. For example, if the specifications of a given task only require positioning the end-effector of a robot at a certain point, i.e. $m = 3$ a robot with $n = 3$ DoF would be able to accomplish the task and one with $n = 4$ DoF would be task redundant. A redundant robot has the advantage of being able to accomplish the task in infinitely many possible ways.
+
+This means that safe motion does not imply stopping the main task and in fact, the main task should only halt when there is no way to make use of redundancy to avoid a collision while completing it.
+
+\section{Objectives and scope}

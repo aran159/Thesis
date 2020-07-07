@@ -1,13 +1,12 @@
 \chapter{Technical Approach}
 \label{ch:tec}
 
-In this chapter we will explain the technical means by which the objective of this thesis has been approached. Firstly, in section \ref{s:pre} we start talking about the WHAT… (Franka Emika, The \emph{Robot Operating System} (ROS), \emph{Gazebo}). In order to make the robot avoid obstacles with proximity data, obstacles need to be located with respect to the robots’ kinematic chain. In section \ref{s:calibration} we briefly present a framework for automatic kinematic calibration that leverages an IMU to accurately estimate the pose (position and orientation) of skin units along the surface of a robot. In section \ref{s:control} the methods for obstacle avoiding control are presented.
+In this chapter, we will explain the technical means by which the objective of this thesis has been approached. Firstly, in section \ref{s:pre} we start talking about the basic elements that have been used in this work. In order to make the robot avoid obstacles with proximity data, obstacles need to be located with respect to the robots’ kinematic chain. In section \ref{s:calibration} we briefly present a framework for automatic kinematic calibration that leverages an IMU to accurately estimate the pose (position and orientation) of skin units along the surface of a robot. The main section is section \ref{s:control}, where the methods for collision avoidance are presented.
 
 \section{Preliminaries}
 \label{s:pre}
 \subsection{ROS}
-
-The Robot Operating System (ROS) is an open source robot middleware or robot development environment (RDE), one of many available in the market. Robot middleware \cite{elkady2009middlew} is an abstraction layer that resides between the operating system (OS) and software applications (figure \ref{fig:middleware}). Its purpose is to provide a framework and  take care of several important parts of an application development, so that the developer needs only to build the logic or algorithm as a component.
+The Robot Operating System (ROS) is an open source robot middleware, robot framework or robot development environment (RDE), one of many available in the market. Robot middleware \cite{elkady2009middlew} is an abstraction layer that resides between the operating system (OS) and software applications (figure \ref{fig:middleware}). Its purpose is to provide a framework and  take care of several important parts of applications development, so that the developer needs only to build the logic or algorithm as a component.
 
 \begin{figure}[htbp]
     \caption[Robotic middleware]{
@@ -19,13 +18,18 @@ The Robot Operating System (ROS) is an open source robot middleware or robot dev
 \label{fig:middleware}
 \end{figure}
 
-ROS’s main concept is its runtime graph: a peer-to-peer network of loosely coupled components or nodes that use the ROS communication infrastructure. ROS implements several different means of communication:
+The main goal of ROS in particular is to provide a framework for easy code reuse in research. This is why ROS is most extended in the academic context. It also provides APIs for Python and C++ and codes written in both languages can be used interchangeably and at the same time.
+
+ROS’s main concept is its runtime graph: a peer-to-peer network of loosely coupled components or nodes that use the ROS communication infrastructure. ROS implements two main communication types:
 
 \begin{itemize}
-    \item
+    \item\textbf{Topics.} A publisher node publishes a message to a topic. Another node subscribes to this topic, meaning that every time there is a new message published in the topic this subscriber node will receive it and therefore will we able to utilize and manipulate the data. Several nodes can publish to a given topic, as well as several nodes can also be subscribers of the same topic.
+    \item\textbf{Services.} Sometimes the asynchronous model topics provide is not suitable. When synchronous behavior is desired services are the way to go. Services have two sides: client and service. From the client side calling a service is equivalent to calling a function. However, this function is managed in a different node: the server side.
 \end{itemize}
 
-Example
+In figure \ref{fig:rosgraph} the runtime graph of this work is presented as an example. The real robot is replaced by a simulation. The /gazebo node is calculating the physics of the real robot, as well as sensor readings.  /CartesianPositionController is subscribed to the topic /joint\_states, as it needs this information for control purposes. Sensor data is processed in the /proximity\_listener node and then is published to the topic /live\_points. This topic has two subscribers in these examples. On the one hand, /proximity\_visualizer uses the data published in /live\_points to visualize the sensor data in rviz (the 3D visualization tool provided by ROS to visualize several types of visual data). On the other hand,  /CartesianPositionController uses the data for collision avoidance control, as explained later in this chapter (CROSS-REFERENCES).
+
+/robot\_state\_publisher is an example of the benefits of the framework ROS provides for easy code reuse. This node is part of a widely used ROS package that uses the robot’s description (described in a .urdf file) and messages published in /joint\_states to provide transformation matrices between any two joints in the robot’s kinematic chain. It publishes this data in /tf topics.
 
 \begin{figure}[htbp]
     \caption[ROS graph]{
@@ -37,13 +41,91 @@ Example
 \label{fig:rosgraph}
 \end{figure}
 
-The ROS Master enables nodes to find each other and to communicate. It also holds the parameter server, which provides a central storage location for data that is relevant for several nodes. It serves, broadly speaking, as a place where global variables can be stored and retrieved by nodes. Examples of things that are stored in the parameter server are PID control parameters, the robot’s urdf description and frequencies at which different components that live in the graph work.
+In addition, bags in ROS enable real data storage coming from sensors in the robot. These allow developers to test their algorithms with real data without having to collect new data every time they need to run their code.
 
-Last, it should be mentioned that despite the fact that ROS is widely used in the academic context, it is lacking reliability and robustness safety critical systems in industrial or commercial contexts require. Some of the industrial fields, such as the automotive and the aerospace, have their own standards for development of safety-critical software. These standards need to be certified for every software component written in any of these fields. ROS was not developed to any of these standards and it actually depends on many libraries that were not developed to this standards. ROS 2, in contrast, is based on components that are safety-certified (DDL) and makes ROS 2 certifiable. Indeed, Apex.AI is working on Apex.OS: an API compatible to ROS 2 that is being certified ISO 26262 for safe automotive applications \cite{apexOS}.
+The ROS Master enables nodes to find each other and to communicate. It also holds the parameter server, which provides a central storage location for data that is relevant for several nodes. It serves, broadly speaking, as a place where global variables can be stored and retrieved by nodes. Examples of things that are stored in the parameter server are PID control parameters, the robot’s urdf description and frequencies at which different components living in the graph work.
 
-\subsection{Panda robot by Franka Emika}
+Last, it should be mentioned that despite the fact that ROS is widely used in the academic context, it is lacking the reliability and robustness safety-critical systems in industrial or commercial contexts require. Some of the industrial fields, such as the automotive and the aerospace, have their own standards for the development of safety-critical software. These standards need to be certified for every software component written in any of these fields. ROS was not developed to any of these standards and it actually depends on many libraries that were not developed to these standards. ROS 2, in contrast, is based on components that are safety-certified (DDL communication) that make ROS 2 certifiable. Indeed, Apex.AI is working on Apex.OS: an API compatible to ROS 2 that is being certified ISO 26262 for safe automotive applications \cite{apexOS}.
 
+\subsection{Franka Emika Panda}
+\label{ss:panda}
+\begin{figure}[htbp]
+    \caption[FEP's kinematic chain]{
+        FEP's kinematic chain \cite{FrankaEmikaPanda}
+    }
+    \begin{center}
+    \includegraphics[width=120mm]{figs/panda-dh-diagram.png}
+    \end{center}
+\label{fig:FEPchain}
+\end{figure}
+
+The robot utilized for the development of the ideas presented in this work has been the Panda, manufactured by the company Franka Emika based in Munich, Germany. It is well known for its performance and usability as well as for its affordability, starting at 10,000\$.
+
+The Franka Emika Panda (FEP) is equipped with 7 revolute joints, i.e. it has 7 degrees of freedom (DOF). Each of the revolute joints mounts a torque sensor. The total weight of FEP is around \SI{18}{\kilo\gram}. It can handle payloads of up to \SI{3}{\kilo\gram}.
+
+It has a control interface capable of providing joint positions $\bf{q}$ and velocities $\dot{\bf{q}}$ and link side torques vector $\bf{\tau}$ with a refresh rate of \SI{1}{\kilo\hertz}. The control interface also provides numerical values of the inertia matrix \(\bar{\bf{M}}(\bf{q})\), the gravity vector \( \bar{\bf{g}}(\bf{q}) \), the end effector Jacobian matrix \( \bar{\bf{J}}(\bf{q}) \) and the Coriolis term \( \overline{\bf{c}}(\bf{q}, \dot{\bf{q}}) \).
+
+There are 3 control modes available. At the lowest level, there is the torque-mode $\bf{\tau_d}$. The joint velocity $\dot{\bf{q_d}}$ and joint position $\bf{q_d}$ modes provide a higher level control and are the ones that are going to be used throughout this work.
+
+The Denavit Hartenberg (DH) parameters provided by the manufacturer \cite{FrankaEmikaPanda} and depicted in figure \ref{fig:FEPchain} are shown in table \ref{t:dh}.
+
+\begin{table}[htb]
+    \caption[Denavit Hartenberg parameters]{
+        Denavit Hartenberg parameters \cite{FrankaEmikaPanda}
+    }
+    \begin{center}
+    \begin{tabular}{|l|l|l|l|l|}
+    \hline
+        \textbf{Joint} & \textbf{a} (m) & \textbf{d} (m) & \(\mbox{\boldmath$\alpha$}\;(\text{rad})\) & \(\mbox{\boldmath$\theta$}\;(\text{rad})\) \\ \hline \hline
+        1 & 0 & 0.333 & 0 & \(\theta_1\) \\ \hline
+        2 & 0 & 0 & \(-\frac{\pi}{2}\) & \(\theta_2\) \\ \hline
+        3 & 0 & 0.316 & \(\frac{\pi}{2}\) & \(\theta_3\) \\ \hline
+        4 & 0.0825 & 0 & \(\frac{\pi}{2}\) & \(\theta_4\) \\ \hline
+        5 & -0.0825 & 0.384 & \(-\frac{\pi}{2}\) & \(\theta_5\) \\ \hline
+        6 & 0 & 0 & \(\frac{\pi}{2}\) & \(\theta_6\) \\ \hline
+        7 & 0.088 & 0 & \(\frac{\pi}{2}\) & \(\theta_7\) \\ \hline
+        F & 0 & 0.107 & 0 & 0 \\ \hline
+    \end{tabular}
+    \end{center}
+\label{t:dh}
+\end{table}
+
+The manufacturer also provides the physical limits of the robot, both in the joint and the cartesian spaces (tables \ref{t:jointlimits} and \ref{t:cartesianlimits} respectively).
+
+\begin{table}[htb]
+    \caption[Joint space limits]{
+        Joint space limits \cite{FrankaEmikaPanda}
+    }
+    \begin{center}
+    \begin{tabular}{|l|l|l|l|l|l|l|l|l|}
+    \hline
+         & Joint 1 & Joint 2 & Joint 3 & Joint 4 & Joint 5 & Joint 6 & Joint 7 & \\ \hline \hline
+        \(\bf{q_{max}}\) & 2.8973 & 1.7628 & 2.8973 & -0.0698 & 2.8973 & 3.7525 & 2.8973 & \(\text{rad}\) \\ \hline
+        \(\bf{q_{min}}\) & -2.8973 & -1.7628 & -2.8973 & -3.0718 & -2.8973 & -0.0175 & -2.8973 & \(\text{rad}\) \\ \hline
+        \(\bf{\dot{q}_{max}}\) & 2.1750 & 2.1750 & 2.1750 & 2.1750 & 2.6100 & 2.6100 & 2.6100 & \(\frac{\text{rad}}{\text{s}}\) \\ \hline
+        \(\bf{\ddot{q}_{max}}\) & 15 & 7.5 & 10 & 12.5 & 15 & 20 & 20 & \(\frac{\text{rad}}{\text{s}^2}\) \\ \hline
+    \end{tabular}
+\end{center}
+\label{t:jointlimits}
+\end{table}
+
+\begin{table}[htb]
+    \caption[Cartesian space limits]{
+        Cartesian space limits \cite{FrankaEmikaPanda}
+    }
+    \begin{center}
+        \centering
+        \begin{tabular}{|l|l|l|l|}
+        \hline
+             & \bf{Translation} & \bf{Rotation} & \bf{Elbow} \\ \hline \hline
+            \(\bf{\dot{p}_{max}}\) & 1.7000 \(\frac{\text{m}}{\text{s}}\) & 2.5000 \(\frac{\text{rad}}{\text{s}}\) & 2.1750 \(\frac{rad}{\text{s}}\) \\ \hline
+            \(\bf{\ddot{p}_{max}}\) & 13.0000 \(\frac{\text{m}}{\text{s}^2}\) & 25.0000 \(\frac{\text{rad}}{\text{s}^2}\) & 10.0000 \(\;\frac{rad}{\text{s}^2}\) \\ \hline
+        \end{tabular}
+    \end{center}
+\label{t:cartesianlimits}
+\end{table}
 \section{Kinematic Calibration}
+
 \label{s:calibration}
 
 We present a framework for automatic kinematic calibration that leverages an
@@ -124,9 +206,407 @@ Our optimization algorithm is composed of the following \textbf{four steps}:
 
 \section{Control}
 \label{s:control}
+\subsection{The Kinematic Control Problem}
+\label{ss:kinematiccontrol}
+In this section one of the most fundamental problems in robotics will be defined and solved: the Kinematic Control Problem. It can be formulated as the problem of obtaining a joint space trajectory $\mathbf{q}(t)$ that satisfies a desired trajectory in the cartesian space $\mathbf{x}(t)$.
 
-Jacobian
+This problem contains several elements required in order to solve the collision avoidance problem in subsequent sections. Moreover, the collision avoidance will be built as a modification to the more fundamental method described in this section.
+\subsubsection{Geometric representation of the kinematic chain of a robot}
+\label{sss:geomrep}
 
-Inverse kinematics
+Kinematics is the branch of physics that studies the motion of the bodies. It does that with no consideration of the causes that originate that motion, forces and torques. Kinematics is required and fundamental in robotics for design, analysis, control and simulation.
 
-Linear system with redundancy
+In order to study the kinematics of a robot its geometric representation must be defined mathematically beforehand. Rigid body kinematics deals with the problem of studying relative movement of two non-deformable elements by attaching a coordinate frame to each of them. Robot manipulators and robots in general can be seen as a series of rigid links connected by joints. Therefore, attaching a frame to each of the links of a robot in a convenient manner is how robots' geometry is usually represented.
+
+However, there are infinitely many ways in which this 3-dimensional frames can be assigned to the links. The origin and rotation of the frames could be located anywhere in the space as long as its movement was fixed to the respective links.
+
+That is where conventions for geometric representation come in place. The most well known and extended convention was introduced by Denavit and Hartenberg (DH) in 1955 \cite{hartenberg1955kinematic}. Although there have been numerous adaptations, the representations serve the same purpose and DH parameters are still widely used. In fact, the manufacturer of the robot employed in this work (\ref{ss:panda}) provides DH parameters in its documentation \cite{FrankaEmikaPanda}.
+
+DH suggest a set of rules to place the frames corresponding to each robot link:
+
+\begin{itemize}
+    \item The $n$ links of the mechanism are numbered from 0 to N, being link 0 the fixed base.
+    \item The $n$ joints of the mechanism are numbered from 1 to N, with joint $i$ located between links $i-1$ and $i$.
+    \item The $\bf{z_i}$ axis is located along the axis of joint $i$.
+    \item The $\bf{x_{i-1}}$ axis is located along the common perpendicular between $\bf{z_{i-1}}$ and $\bf{z_i}$ axis.
+\end{itemize}
+
+Then, they define 4 parameters that completely define the position and rotation of a link with respect to the previous one. Note that full position and orientation are usually defined by at least 6 parameters. However, geometric constraints inherent to robotic arms allow us to define them with just 4 parameters.
+
+The four parameters are:
+
+\begin{itemize}
+    \item $\bf{a_i}$: the distance from $\bf{z_{i-1}}$ to $\bf{z_{i}}$ along $\bf{x_{i-1}}$.
+    \item $\bf{\alpha_i}$: the angle from $\bf{z_{i-1}}$ to $\bf{z_{i}}$ about $\bf{x_{i-1}}$.
+    \item $\bf{d_i}$: the distance from $\bf{x_{i-1}}$ to $\bf{x_{i}}$ along $\bf{z_{i}}$.
+    \item $\bf{\theta_i}$: the angle from $\bf{x_{i-1}}$ to $\bf{x_{i}}$ about $\bf{z_{i}}$.
+\end{itemize}
+
+Most common joint types in robot manipulators are revolute and prismatic joints. In the case of \textbf{revolute joints} all the parameters but $\bf{\theta_i}$ are defined by the geometric design of the robot, while $\bf{\theta_i}$ is the variable of the movement. If the joint is \textbf{prismatic}, all the parameters but $\bf{d_i}$ are defined by the geometry of the robot, while $\bf{d_i}$ is the variable of the movement.
+
+Franka Panda Emika (described in section \ref{ss:panda}) is equipped with 7 revolute joints. Its DH parameters are given by the manufacturer and shown in figure \ref{fig:FEPchain}.
+
+In ROS, the robots' geometry is internally described in \textit{urdf} files. \textit{urdf} files make use of \textit{Extensible Markup Language (XML)}, the same markup language that is used for web pages in \textit{html} files. The following fragment taken from the complete descripion of Franka Panda (by justagist \cite{justagist}) Emika describes the transformation from frame $6$ to frame $7$.
+
+\begin{lstlisting}[caption={Fragment of panda\_arm.urdf},captionpos=b]
+<joint name="${arm_id}_joint7" type="revolute">
+      <safety_controller k_position="100.0"
+                         k_velocity="40.0"
+                         soft_lower_limit="-2.8973"
+                         soft_upper_limit="2.8973"/>
+      <origin rpy="${pi/2} 0 0" xyz="0.088 0 0"/> (*\label{code:origin}*)
+      <parent link="${arm_id}_link6"/>
+      <child link="${arm_id}_link7"/>
+      <axis xyz="0 0 1"/>
+      <limit effort="12" lower="-2.8973"
+                         upper="2.8973"
+                         velocity="2.6100"/>
+      <dynamics damping="1.0" friction="0.5"/>
+</joint>
+\end{lstlisting}
+
+The relative positions and orientations are defined under the tag \lstinline{<origin/>} in line \ref{code:origin}. DH parameters are not used in this tag, even though \textit{urdf} could be adapted to use them through the language \textit{xacro}, that permits to do math inside textit{urdf}. Rotation is defined through \textit{Euler Angles}:  rotations are defined by applying rotation about $x$, $y$ and $z$ axes, in this order. Translation is defined with a $3 \times 1$ vector that goes from frame $i-1$ to frame $i$, from $6$ to $7$ in this case.
+
+The use of DH parameters would have been beneficial and less error prone through the process of writing the \textit{urdf} description.
+
+\subsubsection{Forward Kinematics}
+\label{sss:FK}
+
+Once the robot has been represented with its DH parameters, a mathematical tool is needed to find the position and orientation of the end effector (or any other point in the kinematic chain) given all the joint variables' values ($\bf{\theta_i}$s for revolute joints and $\bf{d_i}$s for prismatic joints). This is the definition of the forward kinematics problem that will be exposed in this section.
+
+A common way to represent the rotation and translation from one axis to another are homogeneous transformation matrices. They are $4 \times 4$ matrices defined as in equation \ref{e:transformationmatrix}.
+
+\begin{equation}
+    \label{e:transformationmatrix}
+    ^{i-1}\mathbf{T}_{i} = \left(\begin{array}{cc}
+    ^{i-1} \mathbf{R}_{i} & ^{i-1} \boldsymbol{p}_{i} \\
+    \mathbf{0}^{\mathrm{T}} & 1
+    \end{array}\right)
+\end{equation}
+
+The top left $3 \times 3$ matrix $^{i-1} \mathbf{R}_{i}$ defines the rotation from axis $i-1$ to axis $i$. $^{i-1} \mathbf{R}_{i}$ is an orthogonal matrix, this meaning that the basis formed by its columns is orthonormal. Each of the column vectors are required to have unit length. One nice property of orthogonal matrices is that their inverse is exactly the same as their transpose:
+
+$$(^{i-1} \mathbf{R}_{i})^{-1} = ^{i} \mathbf{R}_{i-1} = (^{i-1} \mathbf{R}_{i})^{\intercal}$$
+
+On the other hand, the top right $3 \times 1$ position vector $^{i-1} \boldsymbol{p}_{i}$ defines the translation vector from axis $i-1$ to axis $i$.
+
+Homogeneous transformation matrices are an easy and convenient way to calculate several linked transformations. $^{i-2}\mathbf{T}_{i}$ would be calculated as follows:
+
+$$^{i-2}\mathbf{T}_{i} = ^{i-2}\mathbf{T}_{i-1} ^{i-1}\mathbf{T}_{i} =
+    \left(\begin{array}{cc}
+    ^{i-2} \mathbf{R}_{i-1} & ^{i-2} \boldsymbol{p}_{i-1} \\
+    \mathbf{0}^{\mathrm{T}} & 1
+    \end{array}\right)
+    \left(\begin{array}{cc}
+    ^{i-1} \mathbf{R}_{i} & ^{i-1} \boldsymbol{p}_{i} \\
+    \mathbf{0}^{\mathrm{T}} & 1
+    \end{array}\right) =
+    \left(\begin{array}{cc}
+    ^{i-2} \mathbf{R}_{i-1} ^{i-1} \mathbf{R}_{i} & (^{i-2} \boldsymbol{p}_{i-1} +  ^{i-2} \mathbf{R}_{i-1} ^{i-1} \boldsymbol{p}_{i})\\
+    \mathbf{0}^{\mathrm{T}} & 1
+    \end{array}\right)
+$$
+
+This is the desired behaviour because $^{i-2} \mathbf{R}_{i-1} ^{i-1} \mathbf{R}_{i}$ represents the combination of applying the rotation $^{i-2} \mathbf{R}_{i-1}$ first and $^{i-1} \mathbf{R}_{i}$ after. $(^{i-2} \boldsymbol{p}_{i-1} +  ^{i-2} \mathbf{R}_{i-1} ^{i-1} \boldsymbol{p}_{i})$ takes the vector $^{i-1} \boldsymbol{p}_{i}$ to the $i-2$ basis and them it sums the origin of the frame $i-1$, $^{i-2} \boldsymbol{p}_{i-1}$, already written in the $i-2$ axis.
+
+The homogeneous transformation matrix $^{i-1}\mathbf{T}_{i}$ can be built from the DH parameters representation with $\bf{a_i}$, $\bf{\alpha_i}$, $\bf{d_i}$ and $\bf{\theta_i}$. For that purpose the following steps are combined in order:
+\begin{enumerate}
+    \item $\bf{\alpha_i}$ rotation about the axis $x_{i-1}$.
+    \item $\bf{a_i}$ translation through the axis $x_{i-1}$.
+    \item $\bf{\theta_i}$ rotation about the axis $z_{i}$.
+    \item $\bf{d_i}$ translation about the axis $z_{i}$.
+\end{enumerate}
+
+
+$$
+^{i-1}\mathbf{T}_{i} =
+\left(\begin{array}{cccc}
+1 & 0 & 0 & 0 \\
+0 & \cos \alpha_{i} & - \sin \alpha_{i} & 0 \\
+0 & \sin \alpha_{i} & \cos \alpha_{i} & 0 \\
+0 & 0 & 0 & 1
+\end{array}\right) \cdot
+\left(\begin{array}{cccc}
+1 & 0 & 0 & a_{i} \\
+0 & 1 & 0 & 0 \\
+0 & 0 & 1 & 0 \\
+0 & 0 & 0 & 1
+\end{array}\right) \cdot
+\left(\begin{array}{cccc}
+\cos \theta_{i} & - \sin \theta_{i} & 0 & 0 \\
+\sin \theta_{i} & \cos \theta_{i} & 0 & 0 \\
+0 & 0 & 1 & 0 \\
+0 & 0 & 0 & 1
+\end{array}\right) \cdot
+\left(\begin{array}{cccc}
+1 & 0 & 0 & 0 \\
+0 & 1 & 0 & 0 \\
+0 & 0 & 1 & d_{i} \\
+0 & 0 & 0 & 1
+\end{array}\right)
+$$
+
+$$
+=
+\left(\begin{array}{cccc}
+\cos \theta_{i} & -\sin \theta_{i} & 0 & a_{i} \\
+\sin \theta_{i} \cos \alpha_{i} & \cos \theta_{i} \cos \alpha_{i} & -\sin \alpha_{i} & -\sin \alpha_{i} d_{i} \\
+\sin \theta_{i} \sin \alpha_{i} & \cos \theta_{i} \sin \alpha_{i} & \cos \alpha_{i} & \cos \alpha_{i} d_{i} \\
+0 & 0 & 0 & 1
+\end{array}\right)
+$$
+
+Once all the the transformation matrices $^{i-1}\mathbf{T}_{i}$ are defined for $i = 1,  \dots, n$, the full transformation from the base $i=0$ to the end effector $i=n$ transformation can easily be calculated:
+
+$$
+^{0}\mathbf{T}_{n} = ^{0}\mathbf{T}_{1} ^{1}\mathbf{T}_{2} \dots ^{n-1}\mathbf{T}_{n}
+$$
+
+Forward Kinematics are calculated in the robot\_state\_publisher package \cite{rosstatepublisher}. The robot's description is read from a \textit{urdf} file loaded in the parameter server. Then, the joints' values are read from a topic named \textit{/joint\_states} and used to compute forward kinematics of all the joints. The results are published in a topic named \textit{/tf}.
+
+\subsubsection{Inverse Kinematics}
+\label{sss:IK}
+
+The inverse Kinematics problem is the opposite to the one of Forward Kinematics (section \ref{sss:FK}). The objective in this case is not to locate the robot's parts once known joint values, but to find the joint values take the end effector (or any other point in the kinematic chain) to a given position and orientation.
+
+Given the nature of the homogeneous transformation matrices defined in section \ref{sss:FK}, whose elements contain $\sin$ and $\cos$ functions, the problem requires to solve a set of non linear equations defined by:
+
+$$
+^{0}\mathbf{T}_{n}(q_{1}, \dots, q_{n}) = (^{0}\mathbf{T}_{n})^{d}
+$$
+
+It is trivial to see that solving the position $^{0} \boldsymbol{p}_{n}(q_{1}, \dots, q_{n}) = (^{0} \boldsymbol{p}_{n})^{d}$ describes $3$ equations. On the other hand, since rotation matrices provide six auxiliary relationships ($3$ coming from the fact that column vectors to have unit length, and $3$ coming from the requirement of its column vectors being mutually orthogonal), and they contain $9$ elements, $9 - 6 = 3$ more equations are coming from $^{0} \mathbf{R}_{n}(q_{1}, \dots, q_{n}) = (^{0} \mathbf{R}_{n})^{d}$.
+
+In order a solution to exist, the desired location and rotation $(^{0}\mathbf{T}_{n})^{d}$ needs to be in the robot's workspace.
+
+In addition, depending on the number of DoF $n$ of the manipulator, these equations will have \textbf{no solution}, will have \textbf{only one solution} or will have \textbf{infinitely many solutions}. Having into account that the problem provides $6$ equations, if $n < 6$ then there will exist no solutions. If $n = 6$ there will only exist one solution. If $n > 6$ there will be infinitely many solutions that will satisfy all $6$ equations.
+
+A closed form of the equation does not always exist. In fact, in the common case there is no way to do this. Consequently, numerical methods are needed.
+
+For Franka Panda Emika $n = 7$, so there are infinitely many joint values that satisfy the Inverse Kinematics equations.
+
+\subsubsection{Forward Instantaneous Kinematics}
+
+\label{sss:FIK}
+
+Forward instataneous Kinematics relates the motion rates of joints $\mathbf{q} = \begin{bmatrix}q_{1} & \dots & q_{n}\end{bmatrix}^{\intercal}$ with the velocities in the 3D Cartesian Space of the end effector.
+
+Note that everything defined for the specific point in the kinematic chain \textit{end effector} will also be adaptable to any other point in the kinematic chain, by simply considering a reduced kinematic chain.
+
+We start by redefining what we got in section \ref{sss:FK}. This was our final result, given in homogeneous transformation matrices:
+
+$$
+^{0}\mathbf{T}_{n} = ^{0}\mathbf{T}_{1} ^{1}\mathbf{T}_{2} \dots ^{n-1}\mathbf{T}_{n} =
+\left(\begin{array}{cc}
+    ^{0} \mathbf{R}_{n} & ^{0} \boldsymbol{p}_{n} \\
+    \mathbf{0}^{\mathrm{T}} & 1
+\end{array}\right)
+$$
+
+The position of the end effector is well defined by the position vector $^{0} \boldsymbol{p}_{n}$. However, the rotation matrix $^{0} \boldsymbol{p}_{n}$, by definition of rotation matrix, contains six auxiliary relationships (\ref{sss:FK}). In consequence, rotation matrices are not minimal representations. For Forward Instantaneous Kinematics we will use a minimal representation of orientation, such as Euler angles (\ref{sss:geomrep}), where orientation is completely described with just three elements.
+
+$$\mathbf{t}(t) = \mathbf{f}(t) = \begin{bmatrix} f_{1}(t) \\ f_{2}(t) \\ f_{3}(t) \\ f_{4}(t) \\ f_{5}(t) \\ f_{6}(t) \end{bmatrix}
+$$
+
+$\mathbf{f}$ is a differentiable nonlinear vector function. $f_{1}(t)$, $f_{2}(t)$ and $f_{3}(t)$ describe the position of the end effector and $f_{4}(t)$ $f_{5}(t)$ and $f_{6}(t)$ its orientation.
+
+Thus, the rate of change of this parameters is given by $\mathbf{\dot{t}}(t)$,
+
+$$
+{\dot{t}_i}(t) = \frac{d{{t}_i}(t)}{dt} = \sum_{i=1}^{n} \frac{\partial{{t}_i}}{\partial q_i} \cdot \frac{dq_i}{dt} = (\nabla_{\mathbf{q}}{t}_i)^{\intercal} \cdot \mathbf{\dot{q}}
+$$
+
+In matrix form,
+
+$$
+\mathbf{\dot{t}} = \frac{d\mathbf{{t}}}{dt} = \frac{\partial{\mathbf{t}}}{\partial \mathbf{q}} \cdot \mathbf{\dot{q}} =
+\mathbf{J}_{\mathbf{t}}(\mathbf{{q}}) \cdot \mathbf{\dot{q}}
+$$
+
+$\mathbf{J}_{\mathbf{t}}(\mathbf{{q}}) \in \mathbb{R}^{6 \times n}$ is called the \textit{Jacobian}. It relates joint space velocities to cartesian space velocities and it is a function of the joint angles (or distances in the case of prismatic joints) $\mathbf{{q}}$.
+
+It is convenient to remark that, with this formulation, the components of the velocity vector $\mathbf{\dot{t}}(t)$ express the rate of change of the parameters that form the minimal representation vector $\mathbf{t}(t)$. In Rigid Body Kinematics, the velocities of all the points in a rigid body (a link in our case) are completely defined by two vectors \cite{Ruigomez2010}.
+
+\begin{enumerate}
+    \item The \textit{angular velocity} of the body $\mbox{\boldmath$\omega$}$.
+    \item The velocity of one point pertaining to the body $\mathbf{v}_{O}$.
+\end{enumerate}
+
+Given those two vectors the velocity $\mathbf{v}_{P}$ of any other point $P$ pertaining to the same body can be calculated as:
+
+\begin{equation}
+\label{eq:velfield}
+\mathbf{v}_{P} = \mathbf{v}_{O} + \mbox{\boldmath$\omega$} \times \overrightarrow{\mathbf{OP}}
+\end{equation}
+
+However, while the end effector velocity represented by the first three elements of $\mathbf{\dot{t}}(t)$ is suitable for $\mathbf{v}_{O}$, the last three elements of $\mathbf{\dot{t}}(t)$ don't express the angular velocity $\mbox{\boldmath$\omega$}$ of the end effector link. They represent the rate of change of Euler Angles or any other minimal representation parameters chosen to describe orientation.
+
+The actual Jacobian that relates the joint space velocities to $\mathbf{\dot{x}} = \begin{bmatrix} \mathbf{v}_{\text{end effector}} \\ \mbox{\boldmath$\omega$}_{\text{end effector}} \end{bmatrix}$ is:
+
+$$
+\mathbf{J}(\mathbf{{q}}) = \mathbf{T}(t) \cdot \mathbf{J}_{\mathbf{t}}(\mathbf{{q}})
+$$
+
+$$
+\mathbf{T}(t) = \begin{bmatrix}\mathbf{I} & \mathbf{0} \\ \mathbf{0} & \mathbf{R}(t)\end{bmatrix}
+$$
+
+$\mathbf{T}(t)$ only depends on time $t$ and its expression depends on the minimal representation chosen to describe orientation. The resulting equation is:
+
+\begin{equation}
+    \label{eq:FIK}
+    \mathbf{\dot{x}} = \mathbf{J}(\mathbf{{q}}) \cdot \mathbf{\dot{q}}
+\end{equation}
+
+There are many methods that compute the values of the jacobian matrix $\mathbf{J}(\mathbf{{q}})$ \cite{Orin1984}. The general idea underlying is similar in all of them, with differences in efficiency.
+
+$$
+\mathbf{J}(\mathbf{{q}}) = \begin{bmatrix} \mbox{\boldmath$\mathcal{J}$}_{P1} & \mbox{\boldmath$\mathcal{J}$}_{P2} & \dots & \mbox{\boldmath$\mathcal{J}$}_{Pn} \\  \mbox{\boldmath$\mathcal{J}$}_{O1} & \mbox{\boldmath$\mathcal{J}$}_{O2} & \dots & \mbox{\boldmath$\mathcal{J}$}_{On} \end{bmatrix}
+$$
+
+$\mbox{\boldmath$\mathcal{J}$}_{Pi} \in \mathbb{R}^{3 \times 1}$ denotes the contribution of $\dot{q}_i$ per radian to $\mathbf{v}_{\text{end effector}}$. $\mbox{\boldmath$\mathcal{J}$}_{Oi} \in \mathbb{R}^{3 \times 1}$ denotes the contribution of $\dot{q}_i$ per radian to $\mbox{\boldmath$\omega$}_{\text{end effector}}$. Their value is computed as follows:
+
+$$
+\boldsymbol{J}_{P i}=\left\{\begin{array}{ll}
+^{0}\mathbf{z}_{i-1} & \text { if joint } i \text { is prismatic } \\
+^{0}\mathbf{z}_{i-1} \times ^{i-1}\boldsymbol{p}_{\text{end effector}} & \text { if joint } i \text { is revolute }
+\end{array}\right.
+$$
+
+$$
+\boldsymbol{J}_{O i}=\left\{\begin{array}{ll}
+\mathbf{0} & \text { if joint } i \text { is prismatic } \\
+^{0}\mathbf{z}_{i-1} & \text { if joint } i \text { is revolute }
+\end{array}\right.
+$$
+
+As described in section \ref{sss:geomrep}, $^{0}\mathbf{z}_{i-1}$ is joint $i$'s $z$ axis, which is a unitary vector in the direction of the joint. $^{0}\mathbf{z}_{i-1}$ coincides both the direction in which a prismatic joint contributes to the end effector velocity $\mathbf{v}_{\text{end effector}}$ and with the contribution of a revolute joint to the angular velocity of the end effector $\mbox{\boldmath$\omega$}_{\text{end effector}}$. The magnitude $\mathbf{z}_{i-1} \times ^{i-1}\boldsymbol{p}_{\text{end effector}}$ is due to the $\mbox{\boldmath$\omega$} \times \overrightarrow{\mathbf{OP}}$ part in equation \ref{eq:velfield}. It is obvious that the contribution of a prismatic joint to $\mbox{\boldmath$\omega$}_{\text{end effector}}$ is $\mathbf{0}$.
+
+KDL
+
+\subsubsection{Inverse Instantaneous Kinematics}
+As defined at the beginning of \ref{ss:kinematiccontrol}, the kinematic control problem deals with the problem of obtaining a joint space trajectory $\mathbf{q}(t)$ that satisfies a desired trajectory in the cartesian space $\mathbf{x}(t)$. Several approaches can be taken in order to find a solution to this problem, but according to \cite{siciliano1990kinematic}, the most relevant ones for redundant manipulators (sections \ref{ss:panda} and \ref{sss:FK}) solve the problem at the joint velocity level.
+
+Therefore, joint space velocities $\mathbf{\dot{q}}(t)$ that result in end effector velocities $\mathbf{\dot{x}_{d}}$ that satisfy a desired trajectory in the cartesian space $\mathbf{x_{d}}(t)$ must be found. This is the opposite problem to the one presented in the previous section (\ref{sss:FIK}) that was resolved in equation \ref{eq:FIK}. The equation presents a linear system of equations in the unknowns ${\mathbf{\dot{q}}}$. This contrasts with the fact that, as stated in section \ref{sss:IK}, the Inverse Kinematics problem is non-linear. The jacobian ${\mathbf{J}(\mathbf{{q}})}$ is a local linearization of the instantaneous problem, which is valid only for the specific time instant $t$ and joint values $\mathbf{{q}}$ for which it was calculated. In the general task that than be identified by $m$ variables:
+
+\begin{equation}
+    \label{eq:linearEquations}
+    \underset{m\times n}{\mathbf{J}(\mathbf{{q}})} \cdot  \underset{n\times 1}{\mathbf{\dot{q}}} = \underset{m\times 1}{\mathbf{\dot{x}_{d}}}
+\end{equation}
+
+It is important to note that the maximum number of variables a task can be identified with is $m = 6$. This implies that for a redundant robot for which $n >= 7$, $m > n$ will always remain true.
+
+In the following paragraphs we will give the results of Linear Algebra that prove that the linear system of equations defined by equation \ref{eq:linearEquations} has a set of solutions can only be either empty or infinite. We also show that the maximum rank of ${\mathbf{J}(\mathbf{{q}})}$ is its number of columns $m$. When the ${\mathbf{J}(\mathbf{{q}})}$ is full rank, i.e. when its rank is exactly $m$, the vector space of solutions has dimension $(m-n)$. When the rank is $<m$, there exists no solution.
+
+We start by listing some definitions and theorems of Linear Algebra (taken from \cite{hefferonlinear}. However this are well known results and definitions and can be found in any general linear algebra book).
+
+% \begin{definition}
+% A \textbf{linear combination} of \( x_{1}, \ldots, x_{n} \) has the form
+% $
+% a_{1} x_{1}+a_{2} x_{2}+a_{3} x_{3}+\dots+a_{n} x_{n}
+% $,
+% where the numbers \( a_{1}, \ldots, a_{n} \in \mathbb{R} \) are the combination's coefficients.
+% \end{definition}
+
+% \begin{definition}
+% The \textbf{span} of a nonempty subset \( \mathcal{S} \) of a vector space is the set of all linear combinations of vectors from \( \mathcal{S} \).
+% \[
+% [\mathrm{S}]=\left\{\mathrm{c}_{1} \vec{s}_{1}+\cdots+\mathrm{c}_{n} \vec{s}_{n} \mid \mathrm{c}_{1}, \ldots, \mathrm{c}_{n} \in \mathbb{R} \text { and } \vec{s}_{1}, \ldots, \vec{s}_{n} \in \mathrm{S}\right\}
+% \]
+% \end{definition}
+
+\begin{definition}
+The \textbf{row space}/\textbf{column space} of a matrix is the span of the set of its rows/columns. The \textbf{row rank}/\textbf{column rank} is the dimension of this space, the number of linearly independent rows/columns.
+\end{definition}
+
+\begin{theorem}
+For any matrix, the row rank and column rank are equal.
+\end{theorem}
+
+\begin{definition}
+The \textbf{rank} of a matrix is its row rank or its column rank.
+\end{definition}
+
+\begin{theorem}
+No linearly independent set can have a size greater than the dimension of the enclosing space.
+\end{theorem}
+
+Therefore, by 6, it is obvious that the maximum rank for a given matrix $\mathbf{A} \in \mathbb{R}^{m \times n} $ is the minimum value between $m$ and $n$. The rank of this matrix can only be $<=$ than this maximum rank. In the case of ${\mathbf{J}(\mathbf{{q}})}$ in a redundant robot this is given by the dimension of the row space $m$.
+
+\begin{theorem}
+For linear systems with $n$ unknowns and with matrix of coefficients $\mathbf{A}$, the statements
+\begin{enumerate}
+    \item the rank of $\mathbf{A}$ is $r$
+    \item the vector space of solutions of the associated homogeneous system has dimension $(n$-$r)$
+\end{enumerate}
+are equivalent.
+\end{theorem}
+
+The homogeneous system associated to equation \ref{eq:linearEquations}, ${\mathbf{J}(\mathbf{{q}})} \cdot  {\mathbf{\dot{q}}} = {\mathbf{0}}$,  consequently has a solution space of dimension $(\text{n} - \text{r}) \geq (\text{n} - \text{max}({\text{r}})) = (\text{n} - \text{m})$. In the case of Panda Franka Emika, the solution space of the associated homogeneous system will always be greater than or equal to $1$: $(\text{n} - \text{r}) \geq (\text{n} - \text{max}(\text{m})) = (7-6)$.
+
+%Prove that if $r < m$ no particular solution exists.
+
+Therefore when the rank of ${\mathbf{J}(\mathbf{{q}})}$ becomes smaller than $m$, the ability to control one axis either of translation or rotation is lost. The positions $q$ in which this situation is given are called singularities. The reader may think that it would be useful to have a measure of when one of this situations is about to take place. \cite{yoshikawa1985dynamic} introduced a measure that indicates how close a robot is from a singularity:
+
+$$\sqrt{\mathbf{J^{\intercal}} \cdot \mathbf{J}}$$
+
+This value tends to $0$ when the vector $q$ tends to a position in which the rank of $\mathbf{J}$ will be decreased.
+
+Summing up, the problem has been defined as a set of linear equations (equation \ref{eq:linearEquations}) and the form of the solutions has been studied. Next, we must solve the set of equations.
+
+Pseudoinverse
+
+However, doesn't avoid singularities.
+
+Leageouis
+
+
+\subsubsection{Control Problem}
+
+
+\begin{lstlisting}[caption={CartesianPositionController.cpp},captionpos=b]
+void moveToPosition(const Eigen::Vector3d xd)
+{
+    Eigen::VectorXd qDot;
+    positionErrorVector = xd - x;
+
+    while (positionErrorVector.norm() > position_error_threshold
+            && ros::ok())
+    {
+        readEndEffectorPosition();
+        readControlPointPositions();
+        positionErrorVector = xd - x;
+        xdDot = pGain * positionErrorVector;
+        ros::spinOnce();
+        qDot = IIK(xdDot)
+        jointVelocityController.sendVelocities(qDot);
+        rate.sleep();
+    }
+    qDot = Eigen::VectorXd::Constant(7, 0.0);
+    jointVelocityController.sendVelocities(qDot);
+}
+
+Eigen::VectorXd IIK(Eigen::Vector3d xdDot)
+{
+    J = kdlSolver.computeJacobian("end_effector", q);
+    Jpinv = J.completeOrthogonalDecomposition().pseudoInverse();
+    Eigen::VectorXd qDot1, qDot2;
+    qDot1 = Jpinv * xdDot;
+    qDot2 = secondaryTaskGain *
+            ((Eigen::MatrixXd::Identity(7,7) - Jpinv*J) *
+            secondaryTaskFunctionGradient(q));
+    return qDot1 + qDot2;
+}
+
+Eigen::VectorXd secondaryTaskFunctionGradient(Eigen::VectorXd q)
+{
+    Eigen::VectorXd qMid, qRanges;
+    qMid = 0.5 * (jointLimitsMax + jointLimitsMin);
+    qRanges = jointLimitsMax - jointLimitsMin;
+    return 2.0/7.0 * (q - qMid).cwiseQuotient(qRanges);
+}
+\end{lstlisting}
+
+\subsection{Flacco}
+
+\subsection{Quadratic programming}
