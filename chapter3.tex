@@ -1,9 +1,12 @@
 \chapter{Technical Approach}
 \label{ch:tec}
 
-In this chapter, we will explain the technical means by which the objective of this thesis has been approached. Firstly, in section \ref{s:pre} we start talking about the basic elements that have been used in this work. In order to make the robot avoid obstacles with proximity data, obstacles need to be located with respect to the robots’ kinematic chain. In section \ref{s:calibration} we briefly present a framework for automatic kinematic calibration that leverages an IMU to accurately estimate the pose (position and orientation) of skin units along the surface of a robot. The main section is section \ref{s:control}, where the methods for collision avoidance are presented.
+In this chapter, we will explain the technical means by which the objective of this thesis has been approached. Firstly, in section \ref{s:pre} we start talking about the basic elements that have been used during the development this work. In order to make the robot avoid obstacles with proximity data, obstacles need to be located with respect to the robots’ kinematic chain. That's why, in section \ref{s:calibration} we briefly present a framework for automatic kinematic calibration that leverages an IMU to accurately estimate the pose (position and orientation) of skin units along the surface of a robot. The main section is section \ref{s:control}, where the methods for collision avoidance are presented.
 
-\section{Preliminaries}
+\section{Tools}
+
+General presentation of the tools
+
 \label{s:pre}
 \subsection{ROS}
 The Robot Operating System (ROS) is an open source robot middleware, robot framework or robot development environment (RDE), one of many available in the market. Robot middleware \cite{elkady2009middlew} is an abstraction layer that resides between the operating system (OS) and software applications (figure \ref{fig:middleware}). Its purpose is to provide a framework and  take care of several important parts of applications development, so that the developer needs only to build the logic or algorithm as a component.
@@ -124,9 +127,13 @@ The manufacturer also provides the physical limits of the robot, both in the joi
     \end{center}
 \label{t:cartesianlimits}
 \end{table}
-\section{Kinematic Calibration}
 
+\section{Perception via proximity sensing}
+
+\subsection{Kinematic Calibration}
 \label{s:calibration}
+
+My work wouldn't have validity in the real world if it wasn't for calibration.
 
 We present a framework for automatic kinematic calibration that leverages an
 IMU to accurately estimate the pose (position and orientation) of skin units,
@@ -204,8 +211,11 @@ Our optimization algorithm is composed of the following \textbf{four steps}:
 \label{fig:calibration_result}
 \end{figure}
 
+\subsection{Location of points itself}
+
 \section{Control}
 \label{s:control}
+
 \subsection{The Kinematic Control Problem}
 \label{ss:kinematiccontrol}
 In this section one of the most fundamental problems in robotics will be defined and solved: the Kinematic Control Problem. It can be formulated as the problem of obtaining a joint space trajectory $\mathbf{q}(t)$ that satisfies a desired trajectory in the cartesian space $\mathbf{x}(t)$.
@@ -496,7 +506,7 @@ Therefore, joint space velocities $\mathbf{\dot{q}}(t)$ that result in end effec
 
 It is important to note that the maximum number of variables a task can be identified with is $m = 6$. This implies that for a redundant robot for which $n >= 7$, $m > n$ will always remain true.
 
-In the following paragraphs we will give the results of Linear Algebra that prove that the linear system of equations defined by equation \ref{eq:linearEquations} has a set of solutions can only be either empty or infinite. We also show that the maximum rank of ${\mathbf{J}(\mathbf{{q}})}$ is its number of columns $m$. When the ${\mathbf{J}(\mathbf{{q}})}$ is full rank, i.e. when its rank is exactly $m$, the vector space of solutions has dimension $(m-n)$. When the rank is $<m$, there exists no solution.
+In the following paragraphs we will utilize some definitions and theorems of Linear Algebra to verify that the linear system of equations defined by equation \ref{eq:linearEquations} has a set of solutions that can only be either empty or infinite. We also show that the maximum rank of ${\mathbf{J}(\mathbf{{q}})}$ is its number of rows $m$. When the ${\mathbf{J}(\mathbf{{q}})}$ is full rank, i.e. when its rank is exactly $m$, the vector space of solutions has dimension $(m-n)$. When the rank is $<m$, there exists no solution.
 
 We start by listing some definitions and theorems of Linear Algebra (taken from \cite{hefferonlinear}. However this are well known results and definitions and can be found in any general linear algebra book).
 
