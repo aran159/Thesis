@@ -328,7 +328,8 @@
 	\normalfont
 	\EmphReset	% bold or underlined?
 	\doublespacing	% footnotes and floats still singlespaced
-	\setcounter{tocdepth}{2}
+	% \setcounter{tocdepth}{2}
+	\setcounter{tocdepth}{4}
 	\setcounter{secnumdepth}{\value{th@SecNum}}
 % Redefine the bibliography command here, just in case someone
 % uses a custom *.sty file that redefines bibliography command
