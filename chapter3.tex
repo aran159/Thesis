@@ -3,54 +3,11 @@
 
 In this chapter, we will explain the technical means by which the objective of this thesis has been approached. Firstly, in section \ref{s:pre} we start talking about the basic elements that have been used during the development this work. In order to make the robot avoid obstacles with proximity data, obstacles need to be located with respect to the robots’ kinematic chain. That's why, in section \ref{s:calibration} we briefly present a framework for automatic kinematic calibration that leverages an IMU to accurately estimate the pose (position and orientation) of skin units along the surface of a robot. The main section is section \ref{s:control}, where the methods for collision avoidance are presented.
 
-\section{Tools}
+\section{Required resources}
 
 General presentation of the tools
 
-\label{s:pre}
-\subsection{ROS}
-The Robot Operating System (ROS) is an open source robot middleware, robot framework or robot development environment (RDE), one of many available in the market. Robot middleware \cite{elkady2009middlew} is an abstraction layer that resides between the operating system (OS) and software applications (figure \ref{fig:middleware}). Its purpose is to provide a framework and  take care of several important parts of applications development, so that the developer needs only to build the logic or algorithm as a component.
-
-\begin{figure}[htbp]
-    \caption[Robotic middleware]{
-        Robotic middleware \cite{elkady2009middlew}
-    }
-    \begin{center}
-    \includegraphics[width=45mm]{figs/middleware.png}
-    \end{center}
-\label{fig:middleware}
-\end{figure}
-
-The main goal of ROS in particular is to provide a framework for easy code reuse in research. This is why ROS is most extended in the academic context. It also provides APIs for Python and C++ and codes written in both languages can be used interchangeably and at the same time.
-
-ROS’s main concept is its runtime graph: a peer-to-peer network of loosely coupled components or nodes that use the ROS communication infrastructure. ROS implements two main communication types:
-
-\begin{itemize}
-    \item\textbf{Topics.} A publisher node publishes a message to a topic. Another node subscribes to this topic, meaning that every time there is a new message published in the topic this subscriber node will receive it and therefore will we able to utilize and manipulate the data. Several nodes can publish to a given topic, as well as several nodes can also be subscribers of the same topic.
-    \item\textbf{Services.} Sometimes the asynchronous model topics provide is not suitable. When synchronous behavior is desired services are the way to go. Services have two sides: client and service. From the client side calling a service is equivalent to calling a function. However, this function is managed in a different node: the server side.
-\end{itemize}
-
-In figure \ref{fig:rosgraph} the runtime graph of this work is presented as an example. The real robot is replaced by a simulation. The /gazebo node is calculating the physics of the real robot, as well as sensor readings.  /CartesianPositionController is subscribed to the topic /joint\_states, as it needs this information for control purposes. Sensor data is processed in the /proximity\_listener node and then is published to the topic /live\_points. This topic has two subscribers in these examples. On the one hand, /proximity\_visualizer uses the data published in /live\_points to visualize the sensor data in rviz (the 3D visualization tool provided by ROS to visualize several types of visual data). On the other hand,  /CartesianPositionController uses the data for collision avoidance control, as explained later in this chapter (CROSS-REFERENCES).
-
-/robot\_state\_publisher is an example of the benefits of the framework ROS provides for easy code reuse. This node is part of a widely used ROS package that uses the robot’s description (described in a .urdf file) and messages published in /joint\_states to provide transformation matrices between any two joints in the robot’s kinematic chain. It publishes this data in /tf topics.
-
-\begin{figure}[htbp]
-    \caption[ROS graph]{
-        ROS graph
-    }
-    \begin{center}
-    \includegraphics[width=165mm]{figs/rosgraph.png}
-    \end{center}
-\label{fig:rosgraph}
-\end{figure}
-
-In addition, bags in ROS enable real data storage coming from sensors in the robot. These allow developers to test their algorithms with real data without having to collect new data every time they need to run their code.
-
-The ROS Master enables nodes to find each other and to communicate. It also holds the parameter server, which provides a central storage location for data that is relevant for several nodes. It serves, broadly speaking, as a place where global variables can be stored and retrieved by nodes. Examples of things that are stored in the parameter server are PID control parameters, the robot’s urdf description and frequencies at which different components living in the graph work.
-
-Last, it should be mentioned that despite the fact that ROS is widely used in the academic context, it is lacking the reliability and robustness safety-critical systems in industrial or commercial contexts require. Some of the industrial fields, such as the automotive and the aerospace, have their own standards for the development of safety-critical software. These standards need to be certified for every software component written in any of these fields. ROS was not developed to any of these standards and it actually depends on many libraries that were not developed to these standards. ROS 2, in contrast, is based on components that are safety-certified (DDL communication) that make ROS 2 certifiable. Indeed, Apex.AI is working on Apex.OS: an API compatible to ROS 2 that is being certified ISO 26262 for safe automotive applications \cite{apexOS}.
-
-\subsection{Franka Emika Panda}
+\subsection{Robot platform}
 \label{ss:panda}
 \begin{figure}[htbp]
     \caption[FEP's kinematic chain]{
@@ -128,6 +85,73 @@ The manufacturer also provides the physical limits of the robot, both in the joi
 \label{t:cartesianlimits}
 \end{table}
 
+\label{s:pre}
+\subsection{ROS}
+The Robot Operating System (ROS) is an open source robot middleware, robot framework or robot development environment (RDE), one of many available in the market. Robot middleware \cite{elkady2009middlew} is an abstraction layer that resides between the operating system (OS) and software applications (figure \ref{fig:middleware}). Its purpose is to provide a framework and  take care of several important parts of applications development, so that the developer needs only to build the logic or algorithm as a component.
+
+\begin{figure}[htbp]
+    \caption[Robotic middleware]{
+        Robotic middleware \cite{elkady2009middlew}
+    }
+    \begin{center}
+    \includegraphics[width=45mm]{figs/middleware.png}
+    \end{center}
+\label{fig:middleware}
+\end{figure}
+
+The main goal of ROS in particular is to provide a framework for easy code reuse in research. This is why ROS is most extended in the academic context. It also provides APIs for Python and C++ and codes written in both languages can be used interchangeably and at the same time.
+
+ROS’s main concept is its runtime graph: a peer-to-peer network of loosely coupled components or nodes that use the ROS communication infrastructure. ROS implements two main communication types:
+
+\begin{itemize}
+    \item\textbf{Topics.} A publisher node publishes a message to a topic. Another node subscribes to this topic, meaning that every time there is a new message published in the topic this subscriber node will receive it and therefore will we able to utilize and manipulate the data. Several nodes can publish to a given topic, as well as several nodes can also be subscribers of the same topic.
+    \item\textbf{Services.} Sometimes the asynchronous model topics provide is not suitable. When synchronous behavior is desired services are the way to go. Services have two sides: client and service. From the client side calling a service is equivalent to calling a function. However, this function is managed in a different node: the server side.
+\end{itemize}
+
+In figure \ref{fig:rosgraph} the runtime graph of this work is presented as an example. The real robot is replaced by a simulation. The /gazebo node is calculating the physics of the real robot, as well as sensor readings.  /CartesianPositionController is subscribed to the topic /joint\_states, as it needs this information for control purposes. Sensor data is processed in the /proximity\_listener node and then is published to the topic /live\_points. This topic has two subscribers in these examples. On the one hand, /proximity\_visualizer uses the data published in /live\_points to visualize the sensor data in rviz (the 3D visualization tool provided by ROS to visualize several types of visual data). On the other hand,  /CartesianPositionController uses the data for collision avoidance control, as explained later in this chapter (CROSS-REFERENCES).
+
+/robot\_state\_publisher is an example of the benefits of the framework ROS provides for easy code reuse. This node is part of a widely used ROS package that uses the robot’s description (described in a .urdf file) and messages published in /joint\_states to provide transformation matrices between any two joints in the robot’s kinematic chain. It publishes this data in /tf topics.
+
+\begin{figure}[htbp]
+    \caption[ROS graph]{
+        ROS graph
+    }
+    \begin{center}
+    \includegraphics[width=165mm]{figs/rosgraph.png}
+    \end{center}
+\label{fig:rosgraph}
+\end{figure}
+
+In addition, bags in ROS enable real data storage coming from sensors in the robot. These allow developers to test their algorithms with real data without having to collect new data every time they need to run their code.
+
+The ROS Master enables nodes to find each other and to communicate. It also holds the parameter server, which provides a central storage location for data that is relevant for several nodes. It serves, broadly speaking, as a place where global variables can be stored and retrieved by nodes. Examples of things that are stored in the parameter server are PID control parameters, the robot’s urdf description and frequencies at which different components living in the graph work.
+
+Last, it should be mentioned that despite the fact that ROS is widely used in the academic context, it is lacking the reliability and robustness safety-critical systems in industrial or commercial contexts require. Some of the industrial fields, such as the automotive and the aerospace, have their own standards for the development of safety-critical software. These standards need to be certified for every software component written in any of these fields. ROS was not developed to any of these standards and it actually depends on many libraries that were not developed to these standards. ROS 2, in contrast, is based on components that are safety-certified (DDL communication) that make ROS 2 certifiable. Indeed, Apex.AI is working on Apex.OS: an API compatible to ROS 2 that is being certified ISO 26262 for safe automotive applications \cite{apexOS}.
+
+
+\subsection{Simulation and Visualization}
+
+According to the Cambridge Dictionary, a simulation is a situation in which a particular set of conditions is created artificially in order to study or experience something that could exist in reality. Simulations are therefore very useful for research and especially for robotics, where the following issues are prevalent:
+
+\begin{itemize}
+    \item Robotic hardware is usually \textbf{costy}.
+    \item Prototyping can be \textbf{dangerous}, since bugs that appear when testing and debugging can lead to damage in the real world, as opposed to programs that only affect the virtual world.
+    \item Development can be \textbf{slow}.
+\end{itemize}
+
+Robot simulation is a very addecuate solution to adress each one of these. That is why his work has IN A FIRST STAGE been developed in simulation, via \textit{Gazebo}.
+
+\textit{Gazebo} is a 3D robot simulator. It features dynamics simulation,  advanced 3D graphics, indoor and outdoor environments and simulation of several sensors with noise that make the virtual readings realistic.
+
+\subsection{Software Packages}
+
+\subsubsection{Robot Kinematics}
+
+\subsubsection{Linear Algebra}
+
+\subsubsection{Optimization}
+
+
 \section{Perception via proximity sensing}
 
 \subsection{Kinematic Calibration}
@@ -155,9 +179,8 @@ so that each transformation can be expressed with no more than four parameters.
         Depiction of multiple skin units (S) placed on the robots links (L) and separated by joints (J).
         We estimate the Denavit-Hartenberg parameters of each joint in order to calculate the pose of each skin unit along the surface of the robot.
     }
-    \begin{center}
-    \includegraphics[width=140mm]{figs/calibration_theory.png}
-    \end{center}
+    \centering
+    \includegraphics[width=\textwidth]{figs/calibration_theory.png}
 \label{fig:calibration_theory}
 \end{figure}
 
@@ -211,7 +234,9 @@ Our optimization algorithm is composed of the following \textbf{four steps}:
 \label{fig:calibration_result}
 \end{figure}
 
-\subsection{Location of points itself}
+\subsection{Point localization algorithm}
+
+\subsection{Visualization in \textit{rviz}}
 
 \section{Control}
 \label{s:control}
@@ -279,10 +304,12 @@ The relative positions and orientations are defined under the tag \lstinline{<or
 
 The use of DH parameters would have been beneficial and less error prone through the process of writing the \textit{urdf} description.
 
+In the next section we will make use of the geometric representation of the robot to locate the diferent elements of the robot.
+
 \subsubsection{Forward Kinematics}
 \label{sss:FK}
 
-Once the robot has been represented with its DH parameters, a mathematical tool is needed to find the position and orientation of the end effector (or any other point in the kinematic chain) given all the joint variables' values ($\bf{\theta_i}$s for revolute joints and $\bf{d_i}$s for prismatic joints). This is the definition of the forward kinematics problem that will be exposed in this section.
+Forward kinematics provides a mathematical tool that allows to find the position and orientation of the end effector or any other point in the kinematic chain given all the joint variables' values. These are ($\bf{\theta_i}$s for revolute joints and $\bf{d_i}$s for prismatic joints.
 
 A common way to represent the rotation and translation from one axis to another are homogeneous transformation matrices. They are $4 \times 4$ matrices defined as in equation \ref{e:transformationmatrix}.
 
@@ -389,11 +416,9 @@ It is trivial to see that solving the position $^{0} \boldsymbol{p}_{n}(q_{1}, \
 
 In order a solution to exist, the desired location and rotation $(^{0}\mathbf{T}_{n})^{d}$ needs to be in the robot's workspace.
 
-In addition, depending on the number of DoF $n$ of the manipulator, these equations will have \textbf{no solution}, will have \textbf{only one solution} or will have \textbf{infinitely many solutions}. Having into account that the problem provides $6$ equations, if $n < 6$ then there will exist no solutions. If $n = 6$ there will only exist one solution. If $n > 6$ there will be infinitely many solutions that will satisfy all $6$ equations.
-
 A closed form of the equation does not always exist. In fact, in the common case there is no way to do this. Consequently, numerical methods are needed.
 
-For Franka Panda Emika $n = 7$, so there are infinitely many joint values that satisfy the Inverse Kinematics equations.
+For Franka Panda Emika $n = 7$, there are infinitely many joint values that satisfy the Inverse Kinematics equations.
 
 \subsubsection{Forward Instantaneous Kinematics}
 
@@ -401,9 +426,9 @@ For Franka Panda Emika $n = 7$, so there are infinitely many joint values that s
 
 Forward instataneous Kinematics relates the motion rates of joints $\mathbf{q} = \begin{bmatrix}q_{1} & \dots & q_{n}\end{bmatrix}^{\intercal}$ with the velocities in the 3D Cartesian Space of the end effector.
 
-Note that everything defined for the specific point in the kinematic chain \textit{end effector} will also be adaptable to any other point in the kinematic chain, by simply considering a reduced kinematic chain.
+Note that everything defined for the specific point in the kinematic chain \textit{end effector} will also be adaptable to any other point in the kinematic chain, by simply considering a reduced kinematic chain that goes from the base to joint $i$, instead of to the end effector.
 
-We start by redefining what we got in section \ref{sss:FK}. This was our final result, given in homogeneous transformation matrices:
+We start by redefining what we got in section \ref{sss:FK}. This was our final result, given in the form of homogeneous transformation matrices:
 
 $$
 ^{0}\mathbf{T}_{n} = ^{0}\mathbf{T}_{1} ^{1}\mathbf{T}_{2} \dots ^{n-1}\mathbf{T}_{n} =
@@ -423,17 +448,22 @@ $\mathbf{f}$ is a differentiable nonlinear vector function. $f_{1}(t)$, $f_{2}(t
 Thus, the rate of change of this parameters is given by $\mathbf{\dot{t}}(t)$,
 
 $$
+\label{asdf}
 {\dot{t}_i}(t) = \frac{d{{t}_i}(t)}{dt} = \sum_{i=1}^{n} \frac{\partial{{t}_i}}{\partial q_i} \cdot \frac{dq_i}{dt} = (\nabla_{\mathbf{q}}{t}_i)^{\intercal} \cdot \mathbf{\dot{q}}
 $$
 
 In matrix form,
 
 $$
-\mathbf{\dot{t}} = \frac{d\mathbf{{t}}}{dt} = \frac{\partial{\mathbf{t}}}{\partial \mathbf{q}} \cdot \mathbf{\dot{q}} =
+\mathbf{\dot{t}} = \frac{d\mathbf{{t}}}{dt} =
+[
+    \frac{\partial{\mathbf{t}}}{\partial \mathbf{q}}
+]
+\cdot \mathbf{\dot{q}} =
 \mathbf{J}_{\mathbf{t}}(\mathbf{{q}}) \cdot \mathbf{\dot{q}}
 $$
 
-$\mathbf{J}_{\mathbf{t}}(\mathbf{{q}}) \in \mathbb{R}^{6 \times n}$ is called the \textit{Jacobian}. It relates joint space velocities to cartesian space velocities and it is a function of the joint angles (or distances in the case of prismatic joints) $\mathbf{{q}}$.
+$\mathbf{J}_{\mathbf{t}}(\mathbf{{q}}) \in \mathbb{R}^{6 \times n}$ is called the \textit{Jacobian}. It relates joint space velocities to cartesian space velocities and it is a function of the joint angles (or distances in the case of prismatic joints) $\mathbf{{q}}$. Its $i$th row is the gradient of the component $i$ in $\mathbf{t}(t)$ $\nabla_{\mathbf{q}}{t}_i$.
 
 It is convenient to remark that, with this formulation, the components of the velocity vector $\mathbf{\dot{t}}(t)$ express the rate of change of the parameters that form the minimal representation vector $\mathbf{t}(t)$. In Rigid Body Kinematics, the velocities of all the points in a rigid body (a link in our case) are completely defined by two vectors \cite{Ruigomez2010}.
 
@@ -506,7 +536,7 @@ Therefore, joint space velocities $\mathbf{\dot{q}}(t)$ that result in end effec
 
 It is important to note that the maximum number of variables a task can be identified with is $m = 6$. This implies that for a redundant robot for which $n >= 7$, $m > n$ will always remain true.
 
-In the following paragraphs we will utilize some definitions and theorems of Linear Algebra to verify that the linear system of equations defined by equation \ref{eq:linearEquations} has a set of solutions that can only be either empty or infinite. We also show that the maximum rank of ${\mathbf{J}(\mathbf{{q}})}$ is its number of rows $m$. When the ${\mathbf{J}(\mathbf{{q}})}$ is full rank, i.e. when its rank is exactly $m$, the vector space of solutions has dimension $(m-n)$. When the rank is $<m$, there exists no solution.
+In the following paragraphs we will utilize some definitions and theorems of Linear Algebra to verify that the linear system of equations defined by equation \ref{eq:linearEquations} has a set of solutions that can only be either empty or infinite. We also verify that when the ${\mathbf{J}(\mathbf{{q}})}$ is full rank, i.e. when its rank is exactly $m$, the vector space of solutions has dimension $(m-n)$. When the rank is $<m$, there exists no solution.
 
 We start by listing some definitions and theorems of Linear Algebra (taken from \cite{hefferonlinear}. However this are well known results and definitions and can be found in any general linear algebra book).
 
@@ -552,23 +582,29 @@ For linear systems with $n$ unknowns and with matrix of coefficients $\mathbf{A}
 are equivalent.
 \end{theorem}
 
-The homogeneous system associated to equation \ref{eq:linearEquations}, ${\mathbf{J}(\mathbf{{q}})} \cdot  {\mathbf{\dot{q}}} = {\mathbf{0}}$,  consequently has a solution space of dimension $(\text{n} - \text{r}) \geq (\text{n} - \text{max}({\text{r}})) = (\text{n} - \text{m})$. In the case of Panda Franka Emika, the solution space of the associated homogeneous system will always be greater than or equal to $1$: $(\text{n} - \text{r}) \geq (\text{n} - \text{max}(\text{m})) = (7-6)$.
+The homogeneous system associated to equation \ref{eq:linearEquations}, ${\mathbf{J}(\mathbf{{q}})} \cdot  {\mathbf{\dot{q}}} = {\mathbf{0}}$,  consequently has a solution space of dimension $(\text{n} - \text{r}) \geq (\text{n} - \text{max}({\text{r}})) = (\text{n} - \text{m})$. In the case of Panda Franka Emika, the solution space of the associated homogeneous system will always be greater than or equal to $1$: $(\text{n} - \text{r}) \geq (\text{n} - \text{max}(\text{m})) = (7-6)$. \textbf{THIS RESULTS IN THE FACT THAT INFINITE SOLUTIONS}.
 
-%Prove that if $r < m$ no particular solution exists.
+\textbf{PROVE THAT IF} $r < m$ no particular solution exists.
 
-Therefore when the rank of ${\mathbf{J}(\mathbf{{q}})}$ becomes smaller than $m$, the ability to control one axis either of translation or rotation is lost. The positions $q$ in which this situation is given are called singularities. The reader may think that it would be useful to have a measure of when one of this situations is about to take place. \cite{yoshikawa1985dynamic} introduced a measure that indicates how close a robot is from a singularity:
+Therefore when the rank of ${\mathbf{J}(\mathbf{{q}})}$ becomes smaller than $m$, the ability to control one axis either of translation or rotation is lost. The positions $q$ in which this situation is given are called singularities.
 
-$$\sqrt{\mathbf{J^{\intercal}} \cdot \mathbf{J}}$$
+Summing up, the problem has been defined as a set of linear equations (equation \ref{eq:linearEquations}) and the existance of the solutions has been studied until now. Next, we must find a solution to the set of equations.
 
-This value tends to $0$ when the vector $q$ tends to a position in which the rank of $\mathbf{J}$ will be decreased.
 
-Summing up, the problem has been defined as a set of linear equations (equation \ref{eq:linearEquations}) and the form of the solutions has been studied. Next, we must solve the set of equations.
+
+\textbf{GENERAL SOLUTION OF THE EQUATION}
 
 Pseudoinverse
 
 However, doesn't avoid singularities.
 
-Leageouis
+\textbf{NUMERIC INSTABILITY SINGULARITIES OF PSEUDOINVERSE} The reader may think that it would be useful to have a measure of when one of this situations is about to take place. \cite{yoshikawa1985dynamic} introduced a measure that indicates how close a robot is from a singularity:
+
+$$\sqrt{\mathbf{J^{\intercal}} \cdot \mathbf{J}}$$
+
+This value tends to $0$ when the vector $q$ tends to a position in which the rank of $\mathbf{J}$ will be decreased.
+
+\textbf{Leageouis and middle range of the joints}
 
 
 \subsubsection{Control Problem}
@@ -617,6 +653,6 @@ Eigen::VectorXd secondaryTaskFunctionGradient(Eigen::VectorXd q)
 }
 \end{lstlisting}
 
-\subsection{Flacco}
+\subsection{Collision avoidance algorithm based on potential field methods and joint velocity constraints}
 
-\subsection{Quadratic programming}
+\subsection{Optimization based collision avoidance algorithm}
