@@ -116,10 +116,9 @@ In figure \ref{fig:rosgraph} the runtime graph of this work is presented as an e
     \caption[ROS graph]{
         ROS graph
     }
-    \begin{center}
-    \includegraphics[width=165mm]{figs/rosgraph.png}
-    \end{center}
-\label{fig:rosgraph}
+    \centering
+    \includegraphics[width=\textwidth]{figs/rosgraph.png}
+    \label{fig:rosgraph}
 \end{figure}
 
 In addition, bags in ROS enable real data storage coming from sensors in the robot. These allow developers to test their algorithms with real data without having to collect new data every time they need to run their code.
@@ -139,25 +138,56 @@ According to the Cambridge Dictionary, a simulation is a situation in which a pa
     \item Development can be \textbf{slow}.
 \end{itemize}
 
-Robot simulation is a very addecuate solution to adress each one of these. That is why his work has IN A FIRST STAGE been developed in simulation, via \textit{Gazebo}.
+Robot simulation is a very addecuate solution to address each of these. This work has been prototyped in simulation. This has enabled parallel development of the artificial skin and its electronics on the one side and the control design on the other. The simulation software package employed has been \textit{Gazebo}.
 
-\textit{Gazebo} is a 3D robot simulator. It features dynamics simulation,  advanced 3D graphics, indoor and outdoor environments and simulation of several sensors with noise that make the virtual readings realistic.
+\textit{Gazebo} \cite{gazebo} is a 3D robot simulator. It features dynamics simulation,  advanced 3D graphics, indoor and outdoor environments and simulation of several sensors with noise that make the virtual readings realistic. It is a standalone software package, but offers integration with ROS through the \textit{gazebo\_ros\_pkgs} ROS packages.
 
-\subsection{Software Packages}
+\begin{figure}
+    \caption[Gazebo]{
+        Franka Panda Emika in Gazebo's simulation environment.
+    }
+    \centering
+    \includegraphics[width=\textwidth]{figs/gazebo_intro.png}
+\end{figure}
+
+On the other hand, ROS offers a useful vizualization tool called \textit{rviz} \cite{rviz}, short for \textit{ROS Visualization}. Several kinds of data can be visualized in \textit{rviz}, which allow to see what the robot is seeing, thinking and planning. These visualization capabilities make it an extremely useful tool for application debugging.
+
+The difference between \textit{Gazebo} and \textit{rviz} is that even though both offer some kind of a graphics visualization, \textit{Gazebo} is mainly focused on simulating the physics whereas \textit{rviz} is mainly useful for visualizing any kind of information concerning the robot's state and its knowledge about the environment. Note that \textit{rviz} has the same role in both real and simulated environments.
+
+\begin{figure}
+    \caption[rviz]{
+        Joint frames in Franka Panda Emika as seen in \textit{rviz}.
+    }
+    \centering
+    \includegraphics[width=\textwidth]{figs/rviz_intro.png}
+\end{figure}
+
+
+
+\subsection{Software Components}
+
+In this section we describe software components chosen to fulfill the needs that have arised during the implementation of the perception and control designs of this work. Given \textit{C++} is the language in which the biggest part of the code is implemented, most of these components are \textit{C++ Libraries}. The other languages used for code prototyping have been \textit{Python} and \textit{Matlab}.
 
 \subsubsection{Robot Kinematics}
 
+\textit{The Kinematics and Dynamics Library (KDL)} \cite{KDL} is a framework that provides the tools to describe robot kinematic chains (see section \ref{sss:geomrep}) and solutions the most usual problems: forward and inverse kinematics, jacobian solvers, etc. (section \ref{sss:FK} through \ref{sss:eepositioncontrol}).
+
 \subsubsection{Linear Algebra}
+
+Eigen \cite{eigen}
+
+NumPy \cite{numpy}
 
 \subsubsection{Optimization}
 
+ALGLIB \cite{alglib}
 
 \section{Perception via proximity sensing}
 
+My work wouldn't have validity in the real world if it wasn't for calibration.
+
 \subsection{Kinematic Calibration}
 \label{s:calibration}
-
-My work wouldn't have validity in the real world if it wasn't for calibration.
 
 We present a framework for automatic kinematic calibration that leverages an
 IMU to accurately estimate the pose (position and orientation) of skin units,
@@ -525,6 +555,7 @@ As described in section \ref{sss:geomrep}, $^{0}\mathbf{z}_{i-1}$ is joint $i$'s
 KDL
 
 \subsubsection{Inverse Instantaneous Kinematics}
+\label{sss:IIK}
 As defined at the beginning of \ref{ss:kinematiccontrol}, the kinematic control problem deals with the problem of obtaining a joint space trajectory $\mathbf{q}(t)$ that satisfies a desired trajectory in the cartesian space $\mathbf{x}(t)$. Several approaches can be taken in order to find a solution to this problem, but according to \cite{siciliano1990kinematic}, the most relevant ones for redundant manipulators (sections \ref{ss:panda} and \ref{sss:FK}) solve the problem at the joint velocity level.
 
 Therefore, joint space velocities $\mathbf{\dot{q}}(t)$ that result in end effector velocities $\mathbf{\dot{x}_{d}}$ that satisfy a desired trajectory in the cartesian space $\mathbf{x_{d}}(t)$ must be found. This is the opposite problem to the one presented in the previous section (\ref{sss:FIK}) that was resolved in equation \ref{eq:FIK}. The equation presents a linear system of equations in the unknowns ${\mathbf{\dot{q}}}$. This contrasts with the fact that, as stated in section \ref{sss:IK}, the Inverse Kinematics problem is non-linear. The jacobian ${\mathbf{J}(\mathbf{{q}})}$ is a local linearization of the instantaneous problem, which is valid only for the specific time instant $t$ and joint values $\mathbf{{q}}$ for which it was calculated. In the general task that than be identified by $m$ variables:
@@ -607,7 +638,8 @@ This value tends to $0$ when the vector $q$ tends to a position in which the ran
 \textbf{Leageouis and middle range of the joints}
 
 
-\subsubsection{Control Problem}
+\subsubsection{End effector Position Control through Inverse Instantaneous Kinematics}
+\label{sss:eepositioncontrol}
 
 
 \begin{lstlisting}[caption={CartesianPositionController.cpp},captionpos=b]
