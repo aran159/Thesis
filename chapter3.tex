@@ -1,35 +1,38 @@
 \chapter{Technical Approach}
 \label{ch:tec}
 
-In this chapter, we will explain the technical means by which the objective of this thesis has been approached. Firstly, in section \ref{s:pre} we start talking about the basic elements that have been used during the development this work. In order to make the robot avoid obstacles with proximity data, obstacles need to be located with respect to the robots’ kinematic chain. That's why, in section \ref{s:calibration} we briefly present a framework for automatic kinematic calibration that leverages an IMU to accurately estimate the pose (position and orientation) of skin units along the surface of a robot. The main section is section \ref{s:control}, where the methods for collision avoidance are presented.
+In this chapter, we will explain the technical means by which the objective of this thesis has been approached. Firstly, in section \ref{s:pre} we start talking about the basic elements that have been used during the development this work. In order to make the robot avoid obstacles with proximity data, obstacles need to be located with respect to the robots’ kinematic chain. That's why, in section \ref{ss:calibration} we briefly present a framework for automatic kinematic calibration that leverages an IMU to accurately estimate the pose (position and orientation) of skin units along the surface of a robot. The main section is section \ref{s:control}, where the methods for collision avoidance are presented.
 
 \section{Required resources}
-
-General presentation of the tools
+\label{s:pre}
+Introductory paragraph. General presentation of the required resources.
 
 \subsection{Robot platform}
-\label{ss:panda}
-\begin{figure}[htbp]
-    \caption[FEP's kinematic chain]{
-        FEP's kinematic chain \cite{FrankaEmikaPanda}
-    }
-    \begin{center}
-    \includegraphics[width=120mm]{figs/panda-dh-diagram.png}
-    \end{center}
-\label{fig:FEPchain}
-\end{figure}
 
 The robot utilized for the development of the ideas presented in this work has been the Panda, manufactured by the company Franka Emika based in Munich, Germany. It is well known for its performance and usability as well as for its affordability, starting at 10,000\$.
 
 The Franka Emika Panda (FEP) is equipped with 7 revolute joints, i.e. it has 7 degrees of freedom (DOF). Each of the revolute joints mounts a torque sensor. The total weight of FEP is around \SI{18}{\kilo\gram}. It can handle payloads of up to \SI{3}{\kilo\gram}.
 
-It has a control interface capable of providing joint positions $\bf{q}$ and velocities $\dot{\bf{q}}$ and link side torques vector $\bf{\tau}$ with a refresh rate of \SI{1}{\kilo\hertz}. The control interface also provides numerical values of the inertia matrix \(\bar{\bf{M}}(\bf{q})\), the gravity vector \( \bar{\bf{g}}(\bf{q}) \), the end effector Jacobian matrix \( \bar{\bf{J}}(\bf{q}) \) and the Coriolis term \( \overline{\bf{c}}(\bf{q}, \dot{\bf{q}}) \).
+\label{ss:panda}
+\begin{figure}[H]
+    \caption[FEP's kinematic chain]{
+        FEP: Joints and dimensions \cite{FrankaEmikaPanda}.
+    }
+    \begin{center}
+    \includegraphics[width=\textwidth]{figs/panda-dh-diagram.png}
+    \end{center}
+\label{fig:FEPchain}
+\end{figure}
+
+
+
+It has a control interface that provides access to joint positions $\bf{q}$ and velocities $\dot{\bf{q}}$ and link side torques vector $\bf{\tau}$, with a refresh rate of \SI{1}{\kilo\hertz}. The control interface also provides numerical values of the inertia matrix \(\bar{\bf{M}}(\bf{q})\), the gravity vector \( \bar{\bf{g}}(\bf{q}) \), the end effector Jacobian matrix \( \bar{\bf{J}}(\bf{q}) \) and the Coriolis term \( \overline{\bf{c}}(\bf{q}, \dot{\bf{q}}) \).
 
 There are 3 control modes available. At the lowest level, there is the torque-mode $\bf{\tau_d}$. The joint velocity $\dot{\bf{q_d}}$ and joint position $\bf{q_d}$ modes provide a higher level control and are the ones that are going to be used throughout this work.
 
 The Denavit Hartenberg (DH) parameters provided by the manufacturer \cite{FrankaEmikaPanda} and depicted in figure \ref{fig:FEPchain} are shown in table \ref{t:dh}.
 
-\begin{table}[htb]
+\begin{table}[H]
     \caption[Denavit Hartenberg parameters]{
         Denavit Hartenberg parameters \cite{FrankaEmikaPanda}
     }
@@ -52,7 +55,7 @@ The Denavit Hartenberg (DH) parameters provided by the manufacturer \cite{Franka
 
 The manufacturer also provides the physical limits of the robot, both in the joint and the cartesian spaces (tables \ref{t:jointlimits} and \ref{t:cartesianlimits} respectively).
 
-\begin{table}[htb]
+\begin{table}[H]
     \caption[Joint space limits]{
         Joint space limits \cite{FrankaEmikaPanda}
     }
@@ -60,7 +63,7 @@ The manufacturer also provides the physical limits of the robot, both in the joi
     \begin{tabular}{|l|l|l|l|l|l|l|l|l|}
     \hline
          & Joint 1 & Joint 2 & Joint 3 & Joint 4 & Joint 5 & Joint 6 & Joint 7 & \\ \hline \hline
-        \(\bf{q_{max}}\) & 2.8973 & 1.7628 & 2.8973 & -0.0698 & 2.8973 & 3.7525 & 2.8973 & \(\text{rad}\) \\ \hline
+        \(\bf{q_{max}}\) & +2.8973 & +1.7628 & +2.8973 & -0.0698 & +2.8973 & +3.7525 & +2.8973 & \(\text{rad}\) \\ \hline
         \(\bf{q_{min}}\) & -2.8973 & -1.7628 & -2.8973 & -3.0718 & -2.8973 & -0.0175 & -2.8973 & \(\text{rad}\) \\ \hline
         \(\bf{\dot{q}_{max}}\) & 2.1750 & 2.1750 & 2.1750 & 2.1750 & 2.6100 & 2.6100 & 2.6100 & \(\frac{\text{rad}}{\text{s}}\) \\ \hline
         \(\bf{\ddot{q}_{max}}\) & 15 & 7.5 & 10 & 12.5 & 15 & 20 & 20 & \(\frac{\text{rad}}{\text{s}^2}\) \\ \hline
@@ -69,7 +72,7 @@ The manufacturer also provides the physical limits of the robot, both in the joi
 \label{t:jointlimits}
 \end{table}
 
-\begin{table}[htb]
+\begin{table}[H]
     \caption[Cartesian space limits]{
         Cartesian space limits \cite{FrankaEmikaPanda}
     }
@@ -85,11 +88,10 @@ The manufacturer also provides the physical limits of the robot, both in the joi
 \label{t:cartesianlimits}
 \end{table}
 
-\label{s:pre}
 \subsection{ROS}
 The Robot Operating System (ROS) is an open source robot middleware, robot framework or robot development environment (RDE), one of many available in the market. Robot middleware \cite{elkady2009middlew} is an abstraction layer that resides between the operating system (OS) and software applications (figure \ref{fig:middleware}). Its purpose is to provide a framework and  take care of several important parts of applications development, so that the developer needs only to build the logic or algorithm as a component.
 
-\begin{figure}[htbp]
+\begin{figure}[H]
     \caption[Robotic middleware]{
         Robotic middleware \cite{elkady2009middlew}
     }
@@ -108,11 +110,11 @@ ROS’s main concept is its runtime graph: a peer-to-peer network of loosely cou
     \item\textbf{Services.} Sometimes the asynchronous model topics provide is not suitable. When synchronous behavior is desired services are the way to go. Services have two sides: client and service. From the client side calling a service is equivalent to calling a function. However, this function is managed in a different node: the server side.
 \end{itemize}
 
-In figure \ref{fig:rosgraph} the runtime graph of this work is presented as an example. The real robot is replaced by a simulation. The /gazebo node is calculating the physics of the real robot, as well as sensor readings.  /CartesianPositionController is subscribed to the topic /joint\_states, as it needs this information for control purposes. Sensor data is processed in the /proximity\_listener node and then is published to the topic /live\_points. This topic has two subscribers in these examples. On the one hand, /proximity\_visualizer uses the data published in /live\_points to visualize the sensor data in rviz (the 3D visualization tool provided by ROS to visualize several types of visual data). On the other hand,  /CartesianPositionController uses the data for collision avoidance control, as explained later in this chapter (CROSS-REFERENCES).
+In figure \ref{fig:rosgraph} the runtime graph of this work is presented as an example. The real robot is replaced by a simulation. The /gazebo node is calculating the physics of the real robot, as well as sensor readings.  /CartesianPositionController is subscribed to the topic /joint\_states, as it needs this information for control purposes. Sensor data is processed in the /proximity\_listener node and then is published to the topic /live\_points. This topic has two subscribers in these examples. On the one hand, /proximity\_visualizer uses the data published in /live\_points to visualize the sensor data in rviz (the 3D visualization tool provided by ROS to visualize several types of visual data). On the other hand,  /CartesianPositionController uses the data for collision avoidance control, as explained later in this chapter (section \ref{s:control}).
 
 /robot\_state\_publisher is an example of the benefits of the framework ROS provides for easy code reuse. This node is part of a widely used ROS package that uses the robot’s description (described in a .urdf file) and messages published in /joint\_states to provide transformation matrices between any two joints in the robot’s kinematic chain. It publishes this data in /tf topics.
 
-\begin{figure}[htbp]
+\begin{figure}[H]
     \caption[ROS graph]{
         ROS graph
     }
@@ -142,7 +144,7 @@ Robot simulation is a very addecuate solution to address each of these. This wor
 
 \textit{Gazebo} \cite{gazebo} is a 3D robot simulator. It features dynamics simulation,  advanced 3D graphics, indoor and outdoor environments and simulation of several sensors with noise that make the virtual readings realistic. It is a standalone software package, but offers integration with ROS through the \textit{gazebo\_ros\_pkgs} ROS packages.
 
-\begin{figure}
+\begin{figure}[H]
     \caption[Gazebo]{
         Franka Panda Emika in Gazebo's simulation environment.
     }
@@ -154,7 +156,7 @@ On the other hand, ROS offers a useful vizualization tool called \textit{rviz} \
 
 The difference between \textit{Gazebo} and \textit{rviz} is that even though both offer some kind of a graphics visualization, \textit{Gazebo} is mainly focused on simulating the physics whereas \textit{rviz} is mainly useful for visualizing any kind of information concerning the robot's state and its knowledge about the environment. Note that \textit{rviz} has the same role in both real and simulated environments.
 
-\begin{figure}
+\begin{figure}[H]
     \caption[rviz]{
         Joint frames in Franka Panda Emika as seen in \textit{rviz}.
     }
@@ -164,47 +166,50 @@ The difference between \textit{Gazebo} and \textit{rviz} is that even though bot
 
 
 
-\subsection{Software Components}
+\subsection{Software Libraries}
 
-In this section we describe software components chosen to fulfill the needs that have arised during the implementation of the perception and control designs of this work. Given \textit{C++} is the language in which the biggest part of the code is implemented, most of these components are \textit{C++ Libraries}. The other languages used for code prototyping have been \textit{Python} and \textit{Matlab}.
+In this section we describe the software libraries chosen to fulfill the needs that have arised during the implementation of the perception and control parts of this work. \textit{C++} is the language in which all the final code is written, so the libraries mentioned in this section are \textit{C++ Libraries}. Other languages (\textit{Python} and \textit{Matlab}) have also been employed in the code prototyping phase, but as their importance is less prevalent the software components employed in those languages will be mentioned in the specific parts they have been used, in section \ref{s:control}.
 
 \subsubsection{Robot Kinematics}
+\label{sss:KDL}
 
-\textit{The Kinematics and Dynamics Library (KDL)} \cite{KDL} is a framework that provides the tools to describe robot kinematic chains (see section \ref{sss:geomrep}) and solutions the most usual problems: forward and inverse kinematics, jacobian solvers, etc. (section \ref{sss:FK} through \ref{sss:eepositioncontrol}).
+\textit{The Kinematics and Dynamics Library (KDL)} \cite{KDL} is a framework that provides the tools to describe robot kinematic chains and solutions to the most usual problems: forward and inverse kinematics, jacobian solvers, etc.
+
+For that purpose, \textit{KDL} implements classes that represent kinematic primitives such as vectors, rotations and frames as well as classes that represent the whole kinematic chain, built from segments defined by kinematic primitives. The classes that represent the whole kinematic chain are \textit{KDL::Chain} and \textit{KDL::Tree}, being \textit{KDL::Tree} a container of \textit{KDL::Chain}s. Various generic forward and inverse kinematic algorithms that take objects of these classes are provided also.
+
+For more information on the elements mentioned in this section see section \ref{ss:kinematiccontrol}, where the fundamental elements for basic kinematic control are discussed.
 
 \subsubsection{Linear Algebra}
 
-Eigen \cite{eigen}
+\textit{Eigen} \cite{eigen} is a \textit{template library} for linear algebra, meaning that every component in the Eigen is a \textit{C++ template}, that is, a component whose functionality can be adapted to more than one \textit{C++} type. In this case, Eigen supports all the \textit{C++} standard numeric types. It is the ecosystem of \textit{KDL} (\ref{sss:KDL}).
 
-NumPy \cite{numpy}
+It supports fixed and dynamicly sized matrices and vectors and all the basic operations and common matrix decompositions. It does all its operations in an efficient, optimized, elegant and reliable fashion.
 
 \subsubsection{Optimization}
 
-ALGLIB \cite{alglib}
+ALGLIB \cite{alglib} is a numerical analysis and data processing library, which includes optimization algorithms among other tools. Its goal is to make high quality numerical code available to industry and academic worlds. The library is offered in a free version and in a commercial paid version, which is highly optimized. The free version, however offers access to the full library and has proved a good enough performance for this work.
 
 \section{Perception via proximity sensing}
 
-My work wouldn't have validity in the real world if it wasn't for calibration.
+Proximity sensors embedded in the artificial skin provide distance information about the surroundings of the robot. These readings are one dimensional distance readings, which means that the readings of isolated individual sensors are not very useful if our objetive is to obtain information about the 3D euclidean space in which the robot's operations take place.
+
+In this section we describe the method developed in this work to create a 3D point cloud from proximity distance data. The first step is the kinematic calibration of the skin units that contain the proximity sensors. Kinematic calibration makes an automatic estimation of the position and orientation of each sensor. The method is described in section \ref{ss:calibration}. It is a conceptual and not detailed description, since it has been developed in a parallel project and is an essential part that make the control methods employed in this work possible. Section \ref{ss:pointcloud} describes the point cloud creation algorithm. Finally, section \ref{ss:visualization} shows how the obtained data is visualized in \textit{rviz}.
 
 \subsection{Kinematic Calibration}
-\label{s:calibration}
+\label{ss:calibration}
 
-We present a framework for automatic kinematic calibration that leverages an
-IMU to accurately estimate the pose (position and orientation) of skin units,
-of arbitrary number, along the surface of a robot.
+This section describes a framework for automatic kinematic calibration that leverages an
+\textit{Inertial Measurement Unit (IMU)} sensor to accurately estimate the position and orientation of a skin unit (SU) along the surface of a robot.
 
-To automatically locate skin units along the surface of a robot,
-we utilize the angular velocity and linear acceleration measurements from the IMUs.
-Our optimization algorithm estimates the pose (position and orientation) of an SU
-using \textit{modified Denavit-Hartenberg (DH) parameters} [1] as illustrated in figure \ref{fig:calibration_theory}.
-The pose of each SU is estimated by six DH parameters with respect to the previous
-joint in the kinematic chain: four parameters from the joint to a virtual joint,
-and two additional parameters from the virtual joint to the SU (other two parameters are set to $0$).
-A virtual joint is located within the link that is orthogonal to the joint’s $z$ axis and the SU’s $z$ axis.
-This solution is necessary to adhere to the Denavit-Hartenberg notation,
+To automatically locate skin units along the surface of a robot, angular velocity and linear acceleration measurements from the IMUs are used. The position and orientation of an SU are estimated
+using a modified version of \textit{Denavit-Hartenberg (DH) parameters} (see section \ref{sss:geomrep}), as illustrated in figure \ref{fig:calibration_theory}.
+The position and orientation of each SU with respect to the previous
+joint in the kinematic chain is estimated by six DH parameters: four parameters from the joint to a virtual joint,
+and two additional parameters from the virtual joint to the SU (the other two parameters are set to $0$). This virtual joint is located within the link that is orthogonal to the joint’s $z$ axis and the SU’s $z$ axis.
+This solution is necessary to adhere to the \textit{DH} notation,
 so that each transformation can be expressed with no more than four parameters.
 
-\begin{figure}[htbp]
+\begin{figure}[H]
     \caption[Calibration theory]{
         Depiction of multiple skin units (S) placed on the robots links (L) and separated by joints (J).
         We estimate the Denavit-Hartenberg parameters of each joint in order to calculate the pose of each skin unit along the surface of the robot.
@@ -214,21 +219,12 @@ so that each transformation can be expressed with no more than four parameters.
 \label{fig:calibration_theory}
 \end{figure}
 
-Our optimization algorithm is composed of the following \textbf{four steps}:
+The optimization algorithm is composed of the following \textbf{four steps}:
 
 \begin{enumerate}
     \item \paragraph{Initialize a kinematic chain with randomized values.}
-    We represent each skin unit coordinate using a transformation matrix.
-    $${}^0T_{SU_i} = {}^0T_1 \cdot {}^1T_2 \dots {}^{i-1}T_i \cdot {}^i T_{SU_i}, \quad \forall i$$
-    , where:
-    $$
-    {}^{i}T_{i+1} =
-        \left[ \begin{array}{c|c}
-            {}^{i}R_{i+1} & {}^{i}\mathbf{p}_{i+1} \\
-            \hline
-            \mathbf{0} & 1 \\
-        \end{array}\right].
-    $$
+    Each skin unit frame is represented using an homogeneous transformation matrix (see section \ref{sss:FK}).
+    $${}^0T_{SU_i} = {}^0T_1 \cdot {}^1T_2 \dots {}^{i-1}T_i \cdot {}^i T_{SU_i}, \quad \forall i \in \{1,2, \dots, n\}$$
 
     \item \paragraph{Collect Data.}
     First, static forces applied to the IMU (that is, the constant acceleration due to gravity)
@@ -237,36 +233,238 @@ Our optimization algorithm is composed of the following \textbf{four steps}:
     and the resulting acceleration as measured by the IMU is stored.
 
     \item \paragraph{Define an error function.}
-    Acceleration exerted on each SU ${}^{SU_i}a_{u,d}$ can be estimated as a composition of local acceleration,
-    tangential acceleration and centripetal acceleration:
-    $$^{RS}\mathbf{a}_{t a n_{u, d}} = ^{R S} \mathbf{\alpha}_{d} \times^{R S} \mathbf{r}_{u, d}$$
+    Acceleration exerted on each SU ${}^{SU_i}a_{u,d}$ can be estimated as a composition of local acceleration $^{0} \mathbf{g}$,
+    tangential acceleration $^{0}\mathbf{a}_{t a n_{u, d}}$ and centripetal acceleration $^{0}\mathbf{a}_{cp_{u, d}}$:
+    $$^{0}\mathbf{a}_{t a n_{u, d}} = ^{0}\bfgreek{\alpha}_{d} \times^{0} \mathbf{r}_{u, d}$$
 
-    $$^{RS}\mathbf{a}_{cp_{u, d}} = ^{R S} \mathbf{\omega}_{d} \times\left(^{R S} \mathbf{\omega}_{d} \times^{R S} \mathbf{r}_{u, d}\right)$$
+    $$^{0}\mathbf{a}_{cp_{u, d}} = ^{0}\bfgreek{\omega}_{d} \times \left(^{0}\bfgreek{\omega}_{d} \times^{0} \mathbf{r}_{u, d}\right)$$
 
-    $$^{SU_{i}}\mathbf{a}_{u, d} = ^{SU_{i}}\underline{R}_{R S} \cdot\left(^{R S} \mathbf{g}+^{R S} \mathbf{a}_{t a n_{u}, d}+^{R S} \mathbf{a}_{c p_{u, d}}\right).$$
-    Angular velocity $\mathbf{\omega}$ and angular acceleration $\mathbf{\alpha}$ are measured during data collection, whereas rotation matrix $R$ and position vector $\mathbf{p}$ can be computed using the current estimated DH parameters.
+    $$^{SU_{i}}\mathbf{a}_{u, d} = ^{SU_{i}}\mathbf{R}_{0} \cdot\left(^{0} \mathbf{g}+^{0} \mathbf{a}_{t a n_{u}, d}+^{0} \mathbf{a}_{c p_{u, d}}\right).$$
 
-    One example error function could be seen as the error between the measured accelerations from the IMUs and the estimated accelerations using the kinematic chain model for $n_{pose}$ poses [2]:
-    $$E = \sum_{i=1}^{n_{pose}} \sum_{j=1}^{n_{joint}} ||a^{model}_{i,j} - a^{IMU}_{i,j}||^2$$
+    Angular velocity $^{0}\bfgreek{\omega}_{d}$ and angular acceleration $^{0}\bfgreek{\alpha}_{d}$ are measured during data collection, whereas rotation matrix $^{SU_{i}}\mathbf{R}_{0}$ and position vector $^{0} \mathbf{r}_{u, d}$ can be computed using the currently estimated DH parameters.
 
     \item \paragraph{Minimize the error function with a global optimizer.}
-    A global optimizer optimizes the DH parameters by minimizing the chosen error function. We combine several different error functions to estimate both rotational and translational parameters. The final result in simulation can be seen in figure \ref{fig:calibration_result}.
+    A global optimizer optimizes the DH parameters by minimizing a given error function. One example error function could be seen as the error between the measured accelerations from the IMUs and the estimated accelerations using the kinematic chain model for $n_{pose}$ poses:
+    $$E = \sum_{i=1}^{n_{pose}} \sum_{j=1}^{n_{joint}} ||a^{model}_{i,j} - a^{IMU}_{i,j}||^2$$
+
+    Several different error functions are used to estimate both rotational and translational parameters.
 
 \end{enumerate}
 
-\begin{figure}[htbp]
+The final result after calibration can be seen in figure \ref{fig:calibration_result}.. Once the calibration is completed, the positions and orientation of the SU's are known. In the next section we will describe how 3D located points can be obtained from the positions and orientations of the sensors plus their readings.
+
+\begin{figure}[H]
     \caption[Calibration result]{
     Calibrated IMU positions on a simulated Franka Emika Panda robot.
     }
     \begin{center}
-    \includegraphics[width=140mm]{figs/calibration_result.png}
+    \includegraphics[width=\textwidth]{figs/calibration_result.png}
     \end{center}
 \label{fig:calibration_result}
 \end{figure}
 
+\subsection{Simulation of proximity sensors}
+\label{ss:proximitysimulation}
+
+We start by describing the algorithm's implementation with simulated sensors. There are some important differences compared to using real sensors:
+
+\begin{itemize}
+    \item The sensors' positions and orientations are assumed to be known. A perfect outcome from calibration is assumed.
+    \item The number of sensors that we can place on the robot's surface is unlimited.
+    \item Sensor noise can be contolled.
+\end{itemize}
+
+In order to add proximity sensors to the robot suface in simulation \textit{XML macros (xacro)} are utilized. \textit{Xacro}'s allow to write shorter, easier to maintain and more readable XML files. One xacro macro expand into a larger XML expression. Moreover, it allows math, which is useful as we will see in the following lines.
+
+We start by describing how to set up the behaviour of the proximity sensors in Gazebo. Gazebo provides the ability to add new functionalities to the \textit{urdf} models through the use of plugins. More specificly, it is sensor plugins that provide sensor simulation functionalities. Sensor plugins are inserted in the \textit{urdf} description of the robot model in \lstinline[columns=fixed]{<gazebo>} tags. Since the sensors are meant to be attached to a link, this tag must include a reference to indicate the link in which the sensor is inserted, as seen in line \ref{code:gazebotag} in the code below.
+
+\begin{lstlisting}[caption={Setting up a ray sensor for Gazebo simulation.},captionpos=b]
+<gazebo reference="proximity_link${proximity_id}"> (*\label{code:gazebotag}*)
+    <material>Gazebo/YellowGlow</material>
+    <sensor type="ray" name="proximity_sensor${proximity_id}">
+        <pose>0 0 0 0 0 0</pose>
+        <visualize>true</visualize>
+        <update_rate>${freq}</update_rate>
+        <ray>
+            <scan>
+                <horizontal>
+                    <samples>1</samples>
+                    <resolution>1</resolution>
+                    <min_angle>-0.0001</min_angle>
+                    <max_angle>0.0001</max_angle>
+                </horizontal>
+            </scan>
+            <range>
+                <min>0.02</min>
+                <max>2.0</max>
+                <resolution>0.01</resolution>
+            </range>
+        </ray>
+        <plugin filename="libgazebo_ros_laser.so"
+                name="proximity_plugin${proximity_id}">
+            <topicName>proximity_data${proximity_id}</topicName>
+            <bodyName>proximity_link${proximity_id}</bodyName>
+            <updateRateHZ>${freq}</updateRateHZ>
+            <gaussianNoise>0.0</gaussianNoise>
+            <xyzOffset>0.0 0.0 0.0</xyzOffset>
+            <rpyOffset>0 0 0</rpyOffset>
+            <frameName>proximity_link${proximity_id}</frameName>
+        </plugin>
+    </sensor>
+</gazebo>
+\end{lstlisting}
+
+Gazebo provides several sensor plugins \cite{gazeboplugins}, such as depth cameras, \textit{IMU}'s or force sensors. The proximity sensing capabilities are provided in \textit{laser} sensors. These are originally thought to simulate \textit{LIDAR} sensors, where a number of distance sensors are installed in one module. However, in order to simulate a single proximity sensor we only need an individual laser beam. The final configuration that accomplishes this is shown between in the \lstinline[columns=fixed]{<ray>} tag.
+
+The sensor messages are published to the topic \lstinline[columns=fixed]{/proximity_data#} and the type of the messages published is \lstinline[columns=fixed]{sensor_msgs/LaserScan}, which is structured as follows:
+
+
+\begin{lstlisting}[caption={LaserScan message structure.},captionpos=b, numbers=none]
+    std_msgs/Header header
+        uint32 seq
+        time stamp
+        string frame_id
+    float32 angle_min
+    float32 angle_max
+    float32 angle_increment
+    float32 time_increment
+    float32 scan_time
+    float32 range_min
+    float32 range_max
+    float32[] ranges
+    float32[] intensities
+\end{lstlisting}
+
+Once we know how to set up the sensors, we need to place them in the robotic arm. Since the arms are mainly cylindrical, cylindrical coordinate systems $(r,\theta, z)$ are a more suitable solution to refer to points on the surface than regular cartesian $(x, y, z)$. \textit{urdf} only allows to express positions in $(x, y, z)$, but math provided by xacro can be utilized to express cylindrical coordinates in those required cartesian coordinates.
+
+\begin{equation}
+    \label{eq:cylindrical}
+    \begin{split}
+& x = r \cos \theta \\
+& y = r \sin \theta \\
+& z = z
+    \end{split}
+\end{equation}
+
+Therefore, the proximity sensor macro allows to use cylindrical coordinates to create a new link attached to the surface of the robot that simulates a new proximity sensor. The interface to the macro is defined by the arguments it takes. These is a list of these arguments:
+
+\begin{itemize}
+    \item \textbf{proximity\_id}: It is important to define a unique name for the link and joint. Trying to use an already defined name will result in an error.
+    \item \textbf{connected\_to}: It is used to select the link in which the sensor is placed. The link's coordinate frame's $z$ axis must be oriented in the direction of the arm cylinder. In other words, link's whose coordinate frames are not oriented in this way are not valid.
+    \item \textbf{type}: It allows to specify the joint type: fixed, revolute or prismatic. In this case, it could have been previously set to fixed.
+    \item \textbf{x0}, \textbf{y0}: If the $z$ axis is not centered in the desired cylinder \lstinline[columns=fixed]{x0} and \lstinline[columns=fixed]{y0} can apply an offset to place the origin where it is needed.
+    \item \textbf{radius}, \textbf{theta}, \textbf{z0}: The cylindrical coordinates presented in equation \ref{eq:cylindrical}.
+\end{itemize}
+
+The actual implementation of the macro can be seen in the following fragment of a \textit{xacro} code. Cylindrical coordinates are implemented in the \lstinline[columns=fixed]{<origin>} tag at line \ref{code:cylindrical}.
+
+\begin{lstlisting}[caption={$<$joint$>$ element in the proximity macro, where the position of new sensor is set up given some arguments.},captionpos=b]
+<!-- Connect proximity sensor to ${connected_to} -->
+<joint name="proximity${proximity_id}_to_${connected_to}"
+        type="${type}">
+    <parent link="${connected_to}"/>
+    <child link="proximity_link${proximity_id}"/>
+    <origin (*\label{code:cylindrical}*)
+        xyz="${x0+radius*sin(theta)} ${y0+radius*cos(theta)} ${z0}"
+        rpy="0 0 ${pi/2 -theta}" />
+</joint>
+\end{lstlisting}
+
+We can use this macro to place sensors through a number of rings to cover the body of the robot and simulate the artificial skin. \lstinline[columns=fixed]{radius} specifies the selected link's radius and \lstinline[columns=fixed]{z0} decides de longitudinal position in with we want to place the sensor. With \lstinline[columns=fixed]{radius} and \lstinline[columns=fixed]{z0} fixed, changing \lstinline[columns=fixed]{theta} can place sensors through the entire ring \lstinline[columns=fixed]{radius} and \lstinline[columns=fixed]{z0} define. The following code places 4 equally spaced sensors in a ring located in panda link 3.
+
+\begin{lstlisting}[caption={Using the proximity macro to place sensors in a robot arm.},captionpos=b]
+<xacro:property name="sensors_per_ring" value="4"/>
+<xacro:property name="ring_id" value="0"/>
+<xacro:property name="radius" value="0.06"/>
+<xacro:property name="z0" value="-0.13"/>
+<xacro:property name="connected_to" value="panda_link3"/>
+<xacro:proximity proximity_id="${sensors_per_ring*ring_id+0}"
+                 radius="${radius}"
+                 theta="${2*pi/sensors_per_ring* 0}"
+                 z0="${z0}" connected_to="${connected_to}"/>
+<xacro:proximity proximity_id="${sensors_per_ring*ring_id+1}"
+                 radius="${radius}"
+                 theta="${2*pi/sensors_per_ring* 1}"
+                 z0="${z0}" connected_to="${connected_to}"/>
+<xacro:proximity proximity_id="${sensors_per_ring*ring_id+2}"
+                 radius="${radius}"
+                 theta="${2*pi/sensors_per_ring* 2}"
+                 z0="${z0}" connected_to="${connected_to}"/>
+<xacro:proximity proximity_id="${sensors_per_ring*ring_id+3}"
+                 radius="${radius}"
+                 theta="${2*pi/sensors_per_ring* 3}"
+                 z0="${z0}" connected_to="${connected_to}"/>
+\end{lstlisting}
+
+The final appearance of the new sensor links added to the surface of the robot is shown in figure \ref{fig:sensorssimulation}, where the new links are shown as red parallelepipeds. The final amount of sensors added for simulation counts $162$.
+
+\begin{figure}[H]
+    \caption[proximity sensors]{
+    Robot body covered with proximity sensors, which appear in red.
+    }
+    \begin{center}
+    \includegraphics[width=\textwidth]{figs/sensors_simulation.png}
+    \end{center}
+\label{fig:sensorssimulation}
+\end{figure}
+
 \subsection{Point localization algorithm}
+\label{ss:pointcloud}
+
+
+\begin{lstlisting}[caption={Point localization \textit{C++} algorithm.},captionpos=b]
+void sensorCallback(const sensor_msgs::LaserScan::ConstPtr& scan)
+{
+int sensor_number =
+    std::stoi
+    (
+        scan->header.frame_id.substr
+        (
+            scan->header.frame_id.find_first_of("0123456789"),
+            scan->header.frame_id.length() -1
+        )
+    );
+
+try
+{
+    listener.lookupTransform
+    (
+        "/world",
+        "/proximity_link" + std::to_string(sensor_number),
+        ros::Time(0),
+        transform[sensor_number]
+    );
+    translation1[sensor_number] <<
+        transform[sensor_number].getOrigin().getX(),
+        transform[sensor_number].getOrigin().getY(),
+        transform[sensor_number].getOrigin().getZ();
+    translation2[sensor_number] << 0.0,
+                                   0.0,
+                                   scan->ranges[0];
+    rotation[sensor_number].w() =
+        transform[sensor_number].getRotation().getW();
+    rotation[sensor_number].x() =
+        transform[sensor_number].getRotation().getX();
+    rotation[sensor_number].y() =
+        transform[sensor_number].getRotation().getY();
+    rotation[sensor_number].z() =
+        transform[sensor_number].getRotation().getZ();
+
+    live_points[sensor_number] =
+        translation1[sensor_number] +
+        (rotation[sensor_number] * translation2[sensor_number]);
+}
+catch (tf::TransformException ex)
+{
+    ROS_ERROR("%s",ex.what());
+    ros::Duration(1.0).sleep();
+}
+}
+\end{lstlisting}
+
 
 \subsection{Visualization in \textit{rviz}}
+\label{ss:visualization}
 
 \section{Control}
 \label{s:control}
@@ -276,6 +474,7 @@ Our optimization algorithm is composed of the following \textbf{four steps}:
 In this section one of the most fundamental problems in robotics will be defined and solved: the Kinematic Control Problem. It can be formulated as the problem of obtaining a joint space trajectory $\mathbf{q}(t)$ that satisfies a desired trajectory in the cartesian space $\mathbf{x}(t)$.
 
 This problem contains several elements required in order to solve the collision avoidance problem in subsequent sections. Moreover, the collision avoidance will be built as a modification to the more fundamental method described in this section.
+
 \subsubsection{Geometric representation of the kinematic chain of a robot}
 \label{sss:geomrep}
 
