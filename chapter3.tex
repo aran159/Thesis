@@ -411,11 +411,67 @@ The final appearance of the new sensor links added to the surface of the robot i
 \subsection{Point localization algorithm}
 \label{ss:pointcloud}
 
+The question answered in this section is: How do we convert the unidimensional reading of the proximity sensors embedded in the skin into a 3D point cloud in the cartesian space.
+
+The diagram in figure \ref{fig:sensorreadingconversion} shows the relationship between the unidimensional reading $d_i$ and the position vector of the corresponding point with respect to the base frame $O$.
+
+\begin{figure}[H]
+    \caption[]{
+    Diagram showing the conversion of a proximity sensor reading into a 3D point in space.
+    }
+    \begin{center}
+    \includegraphics[width=100mm]{figs/proximity_sensors.eps}
+    \end{center}
+    \label{fig:sensorreadingconversion}
+\end{figure}
+
+The position of orientation $^{j}\mathbf{T}_{S_i}$ of the sensor $S_i$ with respect to the joint $j$ in which its located are obtained after the calibration process presented in section \ref{ss:calibration}. This allows to obtain the position and orientation $^{0}\mathbf{T}_{S_i}$ of the sensor $S_i$ with respect to the base frame $O$, through forward kinematics (explained in section \ref{sss:FK}).
+
+$$
+^{0}\mathbf{T}_{S_i} = ^{0}\mathbf{T}_{j} \cdot ^{j}\mathbf{T}_{S_i}
+$$
+
+Once $^{0}\mathbf{T}_{S_i}$ is known, the next step is calculating the position vector of obstacle associated to the sensor $S_i$ with respect to the base frame. The distance $d_i$ is read in the $z$ axis of $S_i$ (coloured in blue in the diagram in \ref{fig:sensorreadingconversion}). Therefore, the position of the point detected written in the $S_i$ coordinate frame has the following form:
+
+$$
+^{S_i}\mathbf{v} =
+\begin{Bmatrix}
+0\\
+0\\
+d_i
+\end{Bmatrix}
+$$
+
+Again, simple forward kinematics allow us to transform that vector in order to express in in the base coordinate frame $O$.
+
+$$
+^{0}\mathbf{v} = ^{0}\mathbf{T}_{S_i} \: ^{S_i}\mathbf{v}
+$$
+
+Expanding the expression having into account the form of homogeneous transformation matrices, $^{0}\mathbf{v}$ results in:
+
+
+\begin{equation}
+\label{eq:livepoints}
+^{0}\mathbf{v} = ^{0}\mathbf{p}_{S_i} + ^{0}\mathbf{R}_{S_i} \: ^{S_i}\mathbf{v}
+\end{equation}
+
+As stated in section \ref{ss:proximitysimulation}, each proximity sensor publishes a \lstinline{LaserScan} type message to the topic \lstinline{/proximity_data#}. We have implemented a \textit{ROS} node that deals with the transformations presented in this section when new messages are published to the topics. The node's activity can be summarized in $3$ steps:
+
+\begin{enumerate}
+    \item Listen to changes in the topics to which proximity sensors send data.
+    \item Transform the unidimensional sensor readings into 3D position vectors.
+    \item Publish the updated 3D position vectors with a certain periodicity. Also, allow saving old obstacle points for a while, so that a memory of the last reading is kept.
+\end{enumerate}
+
+In the following paragraphs we expand on these steps. First, the callback function is explained, where steps (1) and (2) are carried out. Then, the publication and buffer in step (3) detailed.
+
+\textit{ROS} suscribers implement a callback function, which allows them to process the data published in the subscribed topics. This callback function is called every time a new message arrives to the topic. The callback that receives the proximity sensor data is presented below.
 
 \begin{lstlisting}[caption={Point localization \textit{C++} algorithm.},captionpos=b]
 void sensorCallback(const sensor_msgs::LaserScan::ConstPtr& scan)
 {
-int sensor_number =
+int sensor_number = (*\label{code:readsensornumber}*)
     std::stoi
     (
         scan->header.frame_id.substr
@@ -450,7 +506,7 @@ try
     rotation[sensor_number].z() =
         transform[sensor_number].getRotation().getZ();
 
-    live_points[sensor_number] =
+    live_points[sensor_number] = (*\label{code:livepoint}*)
         translation1[sensor_number] +
         (rotation[sensor_number] * translation2[sensor_number]);
 }
@@ -462,6 +518,13 @@ catch (tf::TransformException ex)
 }
 \end{lstlisting}
 
+The first thing the callback function does is read the sensor from which it is receiving the message. This is done in line \ref{code:readsensornumber}. There is a single callback for all the sensors, so this step is crucial.
+
+Then, the sensor's position and orientation are obtained through a function that the \lstinline{tf} library provides: \lstinline{lookupTransform}. Also, $^{S_i}\mathbf{v}$ is created through the distance readings packaged in the \lstinline{ranges} member of the message received. Note that as mentioned in section \ref{ss:proximitysimulation}, \lstinline{LaserScan} messages have the potential capability to include several sensors in one, as in \textit{LIDAR}'s. However, in this case each sensor publishes a separate message, so \lstinline{ranges} contains a unique element, indexed by \lstinline{ranges[0]}.
+
+Last, line \ref{code:livepoint} implements equation \ref{eq:livepoints}. The obtained vector is saved in the position corresponding to the sensor that is sending the message of the \lstinline{std::vector} \lstinline{live_points}.
+
+PUBLISHING AND BUFFER
 
 \subsection{Visualization in \textit{rviz}}
 \label{ss:visualization}
