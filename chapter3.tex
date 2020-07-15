@@ -8,12 +8,13 @@ In this chapter, we will explain the technical means by which the objective of t
 Introductory paragraph. General presentation of the required resources.
 
 \subsection{Robot platform}
+\label{ss:panda}
 
 The robot utilized for the development of the ideas presented in this work has been the Panda, manufactured by the company Franka Emika based in Munich, Germany. It is well known for its performance and usability as well as for its affordability, starting at 10,000\$.
 
 The Franka Emika Panda (FEP) is equipped with 7 revolute joints, i.e. it has 7 degrees of freedom (DOF). Each of the revolute joints mounts a torque sensor. The total weight of FEP is around \SI{18}{\kilo\gram}. It can handle payloads of up to \SI{3}{\kilo\gram}.
 
-\label{ss:panda}
+
 \begin{figure}[H]
     \caption[FEP's kinematic chain]{
         FEP: Joints and dimensions \cite{FrankaEmikaPanda}.
@@ -464,7 +465,7 @@ As stated in section \ref{ss:proximitysimulation}, each proximity sensor publish
     \item Publish the updated 3D position vectors with a certain periodicity. Also, allow saving old obstacle points for a while, so that a memory of the last reading is kept.
 \end{enumerate}
 
-In the following paragraphs we expand on these steps. First, the callback function is explained, where steps (1) and (2) are carried out. Then, the publication and buffer in step (3) detailed.
+In the following paragraphs we expand on these steps. First, the callback function is explained, where steps (1) and (2) are carried out. Then, the publication of messages and buffer implementation are detailed in step (3).
 
 \textit{ROS} suscribers implement a callback function, which allows them to process the data published in the subscribed topics. This callback function is called every time a new message arrives to the topic. The callback that receives the proximity sensor data is presented below.
 
@@ -524,13 +525,68 @@ Then, the sensor's position and orientation are obtained through a function that
 
 Last, line \ref{code:livepoint} implements equation \ref{eq:livepoints}. The obtained vector is saved in the position corresponding to the sensor that is sending the message of the \lstinline{std::vector} \lstinline{live_points}.
 
-PUBLISHING AND BUFFER
+As far as the publication of this processed data is concerned, there are two things that need to be taken into account. On the one hand, sensed points that come from the robot itself's need to be removed. We do this by covering the whole robot body with a set of spheres, shown in figure \ref{fig:spheres}, and checking if the points are inside those spheres. This is done in \lstinline{isInSphere} in line \ref{code:isInSphere} of listing \ref{lst:pointspublication}.
+
+\begin{figure}[H]
+    \caption[Spheres]{
+    Sphere coverage of the robot for removal of the points detected its the surface.
+    }
+    \begin{center}
+    \includegraphics[width=120mm]{figs/spheres.png}
+    \end{center}
+\label{fig:spheres}
+\end{figure}
+
+\begin{lstlisting}[caption={Body and floor points removal and publication \textit{C++} algorithm.},label={lst:pointspublication},captionpos=b]
+geometry_msgs::Point point;
+ros_robotic_skin::PointArray msg;
+
+ros::Rate rate(50.0);
+while (ros::ok())
+{
+    for (int i = 0; i < num_sensors; i++)
+    {
+        if (std::isnan(live_points[i].x()) ||
+            isInSphere(live_points[i]) || (*\label{code:isInSphere}*)
+            (live_points[i].z() < floor_threshold) && removeFloor);
+        else
+        {
+            point.x = live_points[i].x();
+            point.y = live_points[i].y();
+            point.z = live_points[i].z();
+            msg.points.push_back(point);
+        }
+    }
+    pub.publish<ros_robotic_skin::PointArray>(msg);
+    msg.points.clear();
+    rate.sleep();
+}
+\end{lstlisting}
+
+Another optional filter that can be applied to the perveived points is that if the boolean variable \lstinline{removeFloor} is set to true, points that are lower than a certain threshold \lstinline{floor_threshold)}, in meters, will also be removed. Also, if a sensor $i$ does not perceive any point in the range for which it is set up, \lstinline{live_point[i]} will be
+
+$$
+\begin{bmatrix}
+\text{NaN} & \text{NaN} & \text{NaN}
+\end{bmatrix}
+^{\intercal}
+$$
+
+and the point will not be added to the message.
+
+The points are packed in a custom created \lstinline{ros_robotic_skin::PointArray} message, whose only field is an array of \lstinline{geometry_msgs::Point}s. This is done at \SI{50}{\hertz}, or what is the same, every \SI{20}{\milli \second}.
+
+BUFFER IS LEFT
+
+REFERENCE TO THE RESULTS
 
 \subsection{Visualization in \textit{rviz}}
 \label{ss:visualization}
 
 \section{Control}
 \label{s:control}
+
+INTRODUCTORY PARAGRAPH
 
 \subsection{The Kinematic Control Problem}
 \label{ss:kinematiccontrol}
