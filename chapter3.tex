@@ -576,6 +576,7 @@ and the point will not be added to the message.
 
 The points are packed in a custom created message called \lstinline{ros_robotic_skin::PointArray} , whose only field is an array of \lstinline{geometry_msgs::Point}s. This is done at \SI{50}{\hertz}, or what is the same, every \SI{20}{\milli \second}.
 
+% TODO
 BUFFER IS LEFT
 
 \subsection{Visualization in \textit{rviz}}
@@ -686,6 +687,7 @@ The points are seen in \textit{rviz} as shown in figure \ref{fig:visualizationpo
 \section{Control}
 \label{s:control}
 
+% TODO
 INTRODUCTORY PARAGRAPH
 
 \subsection{The Kinematic Control Problem}
@@ -1020,7 +1022,7 @@ The \textbf{rank} of a matrix is its row rank or its column rank.
 No linearly independent set can have a size greater than the dimension of the enclosing space.
 \end{theorem}
 
-Therefore, by 6, it is obvious that the maximum rank for a given matrix $\mathbf{A} \in \mathbb{R}^{m \times n} $ is the minimum value between $m$ and $n$. The rank of this matrix can only be $<=$ than this maximum rank. In the case of ${\mathbf{J}(\mathbf{{q}})}$ in a redundant robot this is given by the dimension of the row space $m$.
+Therefore, because of this last theorem, it is obvious that the maximum rank for a given matrix $\mathbf{A} \in \mathbb{R}^{m \times n} $ is the minimum value between $m$ and $n$. The rank of this matrix can only be equal to or less than that maximum rank. In the case of redundant robots, the maximum rank ${\mathbf{J}(\mathbf{{q}})}$ will always be given by the dimension of the row space $m$, that is, the number of variables needed to define the task.
 
 \begin{theorem}
 For linear systems with $n$ unknowns and with matrix of coefficients $\mathbf{A}$, the statements
@@ -1031,28 +1033,49 @@ For linear systems with $n$ unknowns and with matrix of coefficients $\mathbf{A}
 are equivalent.
 \end{theorem}
 
-The homogeneous system associated to equation \ref{eq:linearEquations}, ${\mathbf{J}(\mathbf{{q}})} \cdot  {\mathbf{\dot{q}}} = {\mathbf{0}}$,  consequently has a solution space of dimension $(\text{n} - \text{r}) \geq (\text{n} - \text{max}({\text{r}})) = (\text{n} - \text{m})$. In the case of Panda Franka Emika, the solution space of the associated homogeneous system will always be greater than or equal to $1$: $(\text{n} - \text{r}) \geq (\text{n} - \text{max}(\text{m})) = (7-6)$. \textbf{THIS RESULTS IN THE FACT THAT INFINITE SOLUTIONS}.
+Consequently, the homogeneous system associated to equation \ref{eq:linearEquations}, ${\mathbf{J}(\mathbf{{q}})} \cdot  {\mathbf{\dot{q}}} = {\mathbf{0}}$, has a solution space of dimension $(\text{n} - \text{r}) \geq (\text{n} - \text{max}({\text{r}})) = (\text{n} - \text{m})$. In the case of Panda Franka Emika, the solution space of the associated homogeneous system will always be greater than or equal to $1$: $(\text{n} - \text{r}) \geq (\text{n} - \text{max}(\text{m})) = (7-6)$.
 
+However, the existance of solution to the general equation requires a particular solution to exist also, because of the following theorem:
+
+% Please add the following required packages to your document preamble:
+% \usepackage{multirow}
+\begin{table}[]
+    \caption{Number of solutions of a linear system}
+    \centering
+    \label{tab:numbersolutions}
+    \begin{tabular}{ll|l|l|}
+    \cline{3-4}
+                                                                                                                                & \multicolumn{1}{c|}{} & \multicolumn{2}{c|}{\textbf{\begin{tabular}[c]{@{}c@{}}number of solution of \\ the homogeneous system?\end{tabular}}} \\ \cline{3-4}
+    \multicolumn{1}{c}{}                                                                                                        &                       & \textbf{one}                                           & \textbf{infinitely many}                                         \\ \hline
+    \multicolumn{1}{|l|}{\multirow{2}{*}{\textbf{\begin{tabular}[c]{@{}l@{}}a particular \\ solution exists?\end{tabular}}}} & \textbf{yes}          & unique solution                                        & infinitely many solutions                                        \\ \cline{2-4}
+    \multicolumn{1}{|l|}{}                                                                                                      & \textbf{no}           & no solutions                                           & no solutions                                                     \\ \hline
+    \end{tabular}
+\end{table}
+
+% TODO
 \textbf{PROVE THAT IF} $r < m$ no particular solution exists.
 
 Therefore when the rank of ${\mathbf{J}(\mathbf{{q}})}$ becomes smaller than $m$, the ability to control one axis either of translation or rotation is lost. The positions $q$ in which this situation is given are called singularities.
 
 Summing up, the problem has been defined as a set of linear equations (equation \ref{eq:linearEquations}) and the existance of the solutions has been studied until now. Next, we must find a solution to the set of equations.
 
-
-
+% TODO
 \textbf{GENERAL SOLUTION OF THE EQUATION}
 
 Pseudoinverse
 
 However, doesn't avoid singularities.
 
-\textbf{NUMERIC INSTABILITY SINGULARITIES OF PSEUDOINVERSE} The reader may think that it would be useful to have a measure of when one of this situations is about to take place. \cite{yoshikawa1985dynamic} introduced a measure that indicates how close a robot is from a singularity:
+% TODO
+\textbf{NUMERIC INSTABILITY SINGULARITIES OF PSEUDOINVERSE}
+
+The reader may think that it would be useful to have a measure of when one of this situations is about to take place. \cite{yoshikawa1985dynamic} introduced a measure that indicates how close a robot is from a singularity:
 
 $$\sqrt{\mathbf{J^{\intercal}} \cdot \mathbf{J}}$$
 
 This value tends to $0$ when the vector $q$ tends to a position in which the rank of $\mathbf{J}$ will be decreased.
 
+% TODO
 \textbf{Leageouis and middle range of the joints}
 
 
