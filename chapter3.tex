@@ -457,7 +457,7 @@ Expanding the expression having into account the form of homogeneous transformat
 ^{0}\mathbf{v} = ^{0}\mathbf{p}_{S_i} + ^{0}\mathbf{R}_{S_i} \: ^{S_i}\mathbf{v}
 \end{equation}
 
-As stated in section \ref{ss:proximitysimulation}, each proximity sensor publishes a \lstinline{LaserScan} type message to the topic \lstinline{/proximity_data#}. We have implemented a \textit{ROS} node that deals with the transformations presented in this section when new messages are published to the topics. The node's activity can be summarized in $3$ steps:
+As stated in section \ref{ss:proximitysimulation}, each proximity sensor publishes a \lstinline{LaserScan} type message to the topic \lstinline{/proximity_data#}. We have implemented a \textit{ROS} node that deals with the transformations presented in this section when new messages are published to the topics and we have named it \lstinline{proximity_listener}. The node's activity can be summarized in $3$ steps:
 
 \begin{enumerate}
     \item Listen to changes in the topics to which proximity sensors send data.
@@ -574,14 +574,114 @@ $$
 
 and the point will not be added to the message.
 
-The points are packed in a custom created \lstinline{ros_robotic_skin::PointArray} message, whose only field is an array of \lstinline{geometry_msgs::Point}s. This is done at \SI{50}{\hertz}, or what is the same, every \SI{20}{\milli \second}.
+The points are packed in a custom created message called \lstinline{ros_robotic_skin::PointArray} , whose only field is an array of \lstinline{geometry_msgs::Point}s. This is done at \SI{50}{\hertz}, or what is the same, every \SI{20}{\milli \second}.
 
 BUFFER IS LEFT
 
-REFERENCE TO THE RESULTS
-
 \subsection{Visualization in \textit{rviz}}
 \label{ss:visualization}
+
+In this section we extoplain the last step of the perception part: visualization. Visualization of the data perveived by the robot is a very intuitive way of seeing what is going on, both on the perception and control algorithms. We will see how to visualize the data processed by the \lstinline{proximity_listener} node in \textit{rviz}.
+
+There are several dysplay types that can be visualized in rviz. We use \lstinline{Marker Array}s \cite{rvizmarker} to visualize the point cloud generated.
+
+We have called the class that implements the visualization \lstinline{ProximityVisualizer}. In the initializer of the class, shown in listing \ref{lst:proximityinitializer}, the node is suscribed  to the data published in the topic \lstinline{live_points} by \lstinline{proximity_listener}. The data received in that topic will be processed in \lstinline{ProximityVisualizer::Callback}. Next, the publication of messages of type \lstinline{MarkerArray} in the topic \lstinline{visualization_marker_array} is set up. The general properties that are kept through all of the \lstinline{Marker}s that will be added to the \lstinline{MarkerArray} are also set up and the rest of the properties are initialized.
+
+Note that these properties alLow to set up the \lstinline{Marker}'s shape, the size, the color, the coordinates in which it will be located, as well as the frame in which those coordinates are written and the orientation. \lstinline{namespace} allows organization within the same topic so that \lstinline{Marker}s can be further classified. The \lstinline{id} of the marker is unique and whenever a new marker with the same \lstinline{id} is published, the previous one is deleted. Finally, \lstinline{action} can be \lstinline{ADD}, \lstinline{DELETE} or \lstinline{DELETEALL}.
+
+\begin{lstlisting}[caption={Initializer of the ProximityVisualizer class},captionpos=b,label={lst:proximityinitializer}]
+ProximityVisualizer::ProximityVisualizer()
+{
+
+    sub = n.subscribe<ros_robotic_skin::PointArray>
+        ("live_points", 1, &ProximityVisualizer::Callback, this);
+    pub = n.advertise<visualization_msgs::MarkerArray>
+        ("visualization_marker_array", 1);
+    // Marker properties that are the same for all the points
+    marker.ns = "Live Points";
+    marker.action = visualization_msgs::Marker::ADD;
+    marker.scale.x = 0.05;
+    marker.scale.y = 0.05;
+    marker.scale.z = 0.05;
+    marker.color.r = 1.0;
+    marker.color.g = 0.0;
+    marker.color.b = 0.0;
+    marker.color.a = 1.0;
+    marker.header.frame_id = "/world";
+    marker.type = visualization_msgs::Marker::SPHERE;
+    marker.pose.orientation.x = 0.0;
+    marker.pose.orientation.y = 0.0;
+    marker.pose.orientation.z = 0.0;
+    marker.pose.orientation.w = 1.0;
+    // Marker properties that depend on the point
+    marker.header.stamp = ros::Time::now();
+    marker.id = 0;
+    marker.pose.position.x = 0.0;
+    marker.pose.position.y = 0.0;
+    marker.pose.position.z = 0.0;
+}
+\end{lstlisting}
+
+Every time a new message arrives to the \lstinline{live_points} topic in runtime, the callback will add the new points received  to a \lstinline{MarkerArray}. This is shown in listing \ref{lst:visualizercallback}.
+
+The sequence when a new message arrives is as follows. First, all the previously published markers are deleted publishing a \lstinline{MarkerArray} that contains a \lstinline{Marker} whose \lstinline{action} is \lstinline{DELETEALL}. Then, the new points received are packed into a \lstinline{Marker} and pushed back in a \lstinline{MarkerArray}. Finally, this \lstinline{MarkerArray} is published.
+
+\begin{lstlisting}[caption={Callback of the ProximityVisualizer class},captionpos=b,label={lst:visualizercallback}]
+    void ProximityVisualizer::Callback(
+        const ros_robotic_skin::PointArray::ConstPtr& msg)
+    {
+        // Delete all points from previous callback
+        marker.action = visualization_msgs::Marker::DELETEALL;
+        marker_array.markers.push_back(marker);
+        pub.publish<visualization_msgs::MarkerArray>(marker_array);
+        marker_array.markers.clear();
+
+        // Add new points
+        marker.action = visualization_msgs::Marker::ADD;
+        marker.header.stamp = ros::Time::now();
+        for (int i = 0; i < msg->points.size(); i++)
+        {
+            // Check that it's not 'nan' or 'inf'
+            marker.id = i;
+            marker.pose.position.x = msg->points[i].x;
+            marker.pose.position.y = msg->points[i].y;
+            marker.pose.position.z = msg->points[i].z;
+            marker_array.markers.push_back(marker);
+        }
+        pub.publish<visualization_msgs::MarkerArray>(marker_array);
+        marker_array.markers.clear();
+    }
+\end{lstlisting}
+
+In order to visualize the \lstinline{MarkerArray}, a subscription to the topic has to be added in \textit{rviz}, as shown in figure \ref{fig:markerarrayrviz}. Since the \lstinline{Namespaces} field is empty, all the points in the received \lstinline{MarkerArray} will be visualized, with no exception.
+
+\begin{figure}[H]
+    \caption[Spheres]{
+    Menu of the Marker Array plugin in \textit{rviz}.
+    }
+    \begin{center}
+    \includegraphics[scale=0.75]{figs/markerarrayrviz.png}
+    \end{center}
+\label{fig:markerarrayrviz}
+\end{figure}
+
+The points are seen in \textit{rviz} as shown in figure \ref{fig:visualizationpoints}, where a wall in front of the robot is being perceived.
+
+\begin{figure}[H]
+    \caption[Spheres]{
+    Final visualization of the perceived points in \textit{rviz}.
+    }
+    \begin{center}
+    \includegraphics[width=\textwidth]{figs/visualizationpoints.png}
+    \end{center}
+\label{fig:visualizationpoints}
+\end{figure}
+
+
+
+
+
+
 
 \section{Control}
 \label{s:control}
