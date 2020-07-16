@@ -191,6 +191,7 @@ It supports fixed and dynamicly sized matrices and vectors and all the basic ope
 ALGLIB \cite{alglib} is a numerical analysis and data processing library, which includes optimization algorithms among other tools. Its goal is to make high quality numerical code available to industry and academic worlds. The library is offered in a free version and in a commercial paid version, which is highly optimized. The free version, however offers access to the full library and has proved a good enough performance for this work.
 
 \section{Perception via proximity sensing}
+\label{s:perception}
 
 Proximity sensors embedded in the artificial skin provide distance information about the surroundings of the robot. These readings are one dimensional distance readings, which means that the readings of isolated individual sensors are not very useful if our objetive is to obtain information about the 3D euclidean space in which the robot's operations take place.
 
@@ -1054,26 +1055,28 @@ However, the existance of solution to the general equation requires a particular
 
 % TODO
 \textbf{PROVE THAT IF} $r < m$ no particular solution exists.
+For a linear system of equations Ax = b, a solution exists for all b if and only if the rank of A is equal to the dimension of b, i.e, A is full rank.
 
 Therefore when the rank of ${\mathbf{J}(\mathbf{{q}})}$ becomes smaller than $m$, the ability to control one axis either of translation or rotation is lost. The positions $q$ in which this situation is given are called singularities.
 
 Summing up, the problem has been defined as a set of linear equations (equation \ref{eq:linearEquations}) and the existance of the solutions has been studied until now. Next, we must find a solution to the set of equations.
 
 % TODO
-\textbf{GENERAL SOLUTION OF THE EQUATION}
 
 Pseudoinverse
 
 However, doesn't avoid singularities.
 
 % TODO
-\textbf{NUMERIC INSTABILITY SINGULARITIES OF PSEUDOINVERSE}
+\textbf{NUMERIC INSTABILITY SINGULARITIES OF PSEUDOINVERSE}. Probably dividing something by zero.
 
 The reader may think that it would be useful to have a measure of when one of this situations is about to take place. \cite{yoshikawa1985dynamic} introduced a measure that indicates how close a robot is from a singularity:
 
 $$\sqrt{\mathbf{J^{\intercal}} \cdot \mathbf{J}}$$
 
 This value tends to $0$ when the vector $q$ tends to a position in which the rank of $\mathbf{J}$ will be decreased.
+
+\textbf{GENERAL SOLUTION OF THE EQUATION}
 
 % TODO
 \textbf{Leageouis and middle range of the joints}
@@ -1127,5 +1130,24 @@ Eigen::VectorXd secondaryTaskFunctionGradient(Eigen::VectorXd q)
 \end{lstlisting}
 
 \subsection{Collision avoidance algorithm based on potential field methods and joint velocity constraints}
+\label{ss:flacco}
+
+The method presented in this section is an adaptation of the academic article ``A Depth Space Approach to Human-Robot Collision Avoidance'' \cite{flacco2012depth}, published by F. Flacco et al. in 2012. The paper presents an avoidance algorithm that takes depth images as inputs. In this work we have implemented the same functionality leveraging the perception via proximity sensing presented in section \ref{s:perception} instead.
+
+The objective of the control algorithm is to maintain a main task as long as collision can be avoided. For that purpose, a disctintion is made between a discrete set of points in the robot kinematic chain that are taken to avoid the collision of any part of the robot with an object in its surroundings. On the one hand, there is the end effector point. This point is given a special attention due to the fact that the main task of a robot is usually focused on employing its end effector to accomplish a specific goal controlling its motion. On the other hand, there are a set of points along the robot, which are selected to represent the whole body of the robot and are treated differently.
+
+The end effector algorithm is based on a \textbf{potential field} approach, where two kinds of virtual fields are generated to accomplish the goal of completing a main task while avoiding collision. Attractive fields contribute to movement towards the goal, while repulsive fields avoid getting closer to a possible collision. This algorithm is further explained in section  \ref{sss:flaccorepulsive}.
+
+The other control points are treated as cartesian constraints that are translated into \textbf{joint velocity constraints} that are satisfied using the task redundancy of the robot. The authors state that if the had considered the same approach for them, they would have had to prioritize the tasks of some points over the rest so that the problem turned feasible. However, doing this is problematic in their own words: giving priority to the end effector the collision safety of the points in the body would not be guaranteed, whereas not prioritizing it would result in random end effector trajectories that would not accomplish the task. This is addressed in section \ref{sss:flaccobody}.
+
+\subsubsection{Potential field methods and velocity estimation applied to the effector}
+\label{sss:flaccorepulsive}
+
+\blindtext
+
+\subsubsection{Joint velocity constraints to avoid collision of any point in the robot}
+\label{sss:flaccobody}
+
+\blindtext
 
 \subsection{Optimization based collision avoidance algorithm}

@@ -1054,7 +1054,7 @@
 	\end{center}
 	\vspace*{2mm}
 	\th@signature{\th@advisortitle\ \th@advisor}
-	\th@signature{\th@reader}		% REQUIRED.
+	%\th@signature{\th@reader}		% REQUIRED.
 	\ifthenelse{\equal{\th@readerThree}{none}}{\relax}
                 {\th@signature{\th@readerThree}} % optional
 	\ifthenelse{\equal{\th@readerFour}{none}}{\relax}
