@@ -1153,9 +1153,9 @@ The other control points are treated as cartesian constraints that are translate
 \subsection{Optimization based collision avoidance algorithm}
 \label{ss:optimization}
 
-% TODO: Introductory paragraph
+The approach of the method presented in section \ref{ss:flacco} makes use of a set of mathematical expressions to specify the direction in which the end effector has to move and to apply simple upper and lower boundaries to the joint velocities calculated. In this section we try a different approach that allows to design and solve problems with more complex constraints: \textbf{Mathematical Optimization}.
 
-\blindtext
+We start introduction Mathematical Optimization and classifying the different kinds of optimization problems there are, emphasizing \textbf{Quadratic Programming}, since the collision avoidance can be suitably defined in this form. We implement the academic article ``Collision Avoidance with Proximity Servoing for Redundant Serial Robot Manipulators'' \cite{dingcollision}, published by Y. Ding and U. Thomas in May 2020.
 
 \subsubsection{Introduction to Mathematical Optimization and Quadratic Programming}
 \label{sss:optimizationintro}
@@ -1217,3 +1217,76 @@ Moreover, a problem has to meet some more requirements so that it can be written
     $$
     \item Depending on the characteristics of the matrix $\mathbf{Q}$ the problem can be easily solved using polynomial-time algorithms. This is only posible if $\mathbf{Q}$ positive definite, that is, if all its eigenvalues are greater than or equal to $0$. When $\mathbf{Q}$ is positive definite, the problem is a \textit{convex QP problem}. In the contrary case, the problem is \textit{non-convex} and only local minimums can be found.
 \end{itemize}
+
+So, the quadratic problem can be formulated as follows:
+
+$$
+\begin{array}{lll}
+    \text { minimize } & \frac{1}{2} \mathbf{x}^{T} \mathbf{Q} \mathbf{x}+\mathbf{c}^{T} \mathbf{x} &\\
+    \text { subject to } & \mathbf{A} \mathbf{x} \leq \mathbf{0}, & \mathbf{A} \in \mathbb{R}^{m \times n} \\
+    & \mathbf{A_{eq}} \mathbf{x} = \mathbf{0}, & \mathbf{A_{eq}} \in \mathbb{R}^{r \times n}
+    \end{array}
+$$
+
+\subsubsection{Ding paper implementation}
+\label{sss:ding}
+
+\blindtext
+
+\begin{equation*}
+    f(\dot{\mathbf{q}}) = \underbrace{\frac{1}{2} \mathbf{(\dot{x}-J\dot{q})^{T} (\dot{x}-J\dot{q})}}_\textbf{1} + \underbrace{\frac{\mu}{2} \mathbf{\dot{q}^{T} \dot{q}}}_\textbf{2}
+\end{equation*}.
+
+\begin{enumerate}
+    \item This is the quadratic error between the robot's target velocity and its actual motion given the optimization variables $\mathbf{dot{q}}$.
+
+    \begin{equation*}
+            \frac{1}{2}\left(\mathbf{\dot{x}-J\dot{q}}\right)^{\mathrm{T}} \left(\mathbf{\dot{x}-J\dot{q}}\right) = \frac{1}{2}\|\mathbf{\dot{x}-J\dot{q}}\|^{2}
+    \end{equation*}
+
+    Observe above that $\mathbf{\dot{x}}$ represents the desired motion, while $\mathbf{J\dot{q}}$ represents the actual motion determined by the jacobian $\mathbf{J}$ presented in section \ref{sss:FIK}. Therefore, $\mathbf{\dot{x}-J\dot{q}}$ is the difference between the desired and actual motions. Performing the actual matrix math on the first term gives us the scalar on the right in the equation above, which happens to be the square of the norm of the error, hence the quadratic error.
+
+    Note that the solution to the optimization problem $\dot{\mathbf{q}}$ would be the result of doing $\mathbf{\dot{q} = J^{\dagger} \dot{x}}$, as explained in section \ref{sss:IIK} if no further constraints where applied to the optimization problem. That is, $\mathbf{\dot{q}= J^{\dagger}\dot{x}}$ would be the smallest value vector to solve $\mathbf{\dot{x} = J\dot{q}}$ and minimize the term $||\mathbf{\dot{x} - J\dot{q}}||$.
+
+    \item As mentiond in section \ref{sss:IIK}, problems appear with the jacobian when near singularities. This second term is used to solve this issue using the \textbf{Damped Least Squares} method \cite{nakamura1986inverse} \cite{wampler1986manipulator}.
+
+    The value of $\mu$ is calculated as follows, using the % TODO: ref
+    :
+
+    \begin{equation*}
+        \begin{array}{l}
+            w=\sqrt{\operatorname{det}\left(\mathbf{J} \mathbf{J}^{\top}\right)} \\
+            \mu=\left\{\begin{array}{ll}
+            \mu_{0}\left(1-\frac{w}{w_{0}}\right)^{2}, & w<w_{0} \\
+            0, & w \geq w_{0}
+            \end{array}\right.
+        \end{array}
+    \end{equation*}
+\end{enumerate}
+
+\blindtext
+
+\begin{equation*}
+    \begin{split}
+    % Beginning of the quadratic optimization equation
+    f(\dot{\mathbf{q}}) & = \frac{1}{2} \mathbf{(\dot{x}-J\dot{q})^{\top} (\dot{x}-J\dot{q})} + \frac{\mu}{2} \mathbf{\dot{q}^{\top} \dot{q}}
+    % Intermediate line 1
+    \\ & = \frac{1}{2} \underbrace{ ( \mathbf{\dot{x}^{\top}-(J\dot{q})^{\top}} )}_\mathbf{ (A+B)^{\top} = A^{\top} + B^{\top} }  \mathbf{(\dot{x}-J\dot{q})}  + \frac{\mu}{2} \mathbf{\dot{q}^{\top} \dot{q}}
+    % Intermediate line 2
+    \\ & = \frac{1}{2} \mathbf{[ \dot{x}^{\top} \dot{x} - \underbrace{\mathbf{\dot{x}^{\top} J\dot{q} - (J\dot{q})^{\top} \dot{x}} }_{\substack{\emph{Both equivalent to:} \\ \mathbf{\dot{x} \cdot J\dot{q}} \\ \emph{since for scalar value} \, a \\ a^{\top} = a }} + (J\dot{q})^{\top} (J\dot{q}) ]} + \frac{\mu}{2} \mathbf{\dot{q}^{\top} \dot{q}}
+    % Intermediate line 3
+    \\ & = \frac{1}{2} \mathbf{( \dot{x}^{\top} \dot{x}} - 2 \mathbf{ \dot{x}^{\top} J\dot{q} + \underbrace{\mathbf{\dot{q}^{\top} J^{\top}}}_{\substack{\mathbf{(AB)^{\top}} \\ = \mathbf{B^{\top}A^{\top}} }} J \dot{q} )} + \frac{1}{2} \mathbf{\dot{q}^{\top} \mu I \dot{q}}
+    % Intermediate line 4
+    \\ & = \frac{1}{2} \mathbf{ \dot{x}^{\top} \dot{x} -  \dot{x}^{\top} J\dot{q} } + \frac{1}{2} \mathbf{\dot{q}^{\top} (J^{\top}J + \mu I) \dot{q}}
+    % Final form of the quadratic optimization equation
+    \\ & = \frac{1}{2}\dot{\mathbf{q}}^{\top}\left(\mathbf{J}^{\top} \mathbf{J}+\mu \mathbf{I}\right) \dot{\mathbf{q}}-\dot{\mathbf{x}}^{\top} \mathbf{J} \dot{\mathbf{q}}+\frac{1}{2} \dot{\mathbf{x}}^{\top} \dot{\mathbf{x}}
+    \end{split}
+\end{equation*}
+
+\blindtext
+
+\begin{equation*}
+    f(\dot{\mathbf{q}}) = \frac{1}{2}\dot{\mathbf{q}}^{\top}\left(\mathbf{J}^{\top} \mathbf{J}+\mu \mathbf{I}\right) \dot{\mathbf{q}}-\dot{\mathbf{x}}^{\top} \mathbf{J} \dot{\mathbf{q}}
+\end{equation*}
+
+As far as the constraints are concerned, three types are implemented. First type is used for joint position, velocity and acceleration limiting and two different types of constraints for obstacle avoidance.
