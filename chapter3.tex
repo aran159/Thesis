@@ -1151,3 +1151,69 @@ The other control points are treated as cartesian constraints that are translate
 \blindtext
 
 \subsection{Optimization based collision avoidance algorithm}
+\label{ss:optimization}
+
+% TODO: Introductory paragraph
+
+\blindtext
+
+\subsubsection{Introduction to Mathematical Optimization and Quadratic Programming}
+\label{sss:optimizationintro}
+
+\textbf{Mathematical Optimization}, also called \textbf{Mathematical Programming}, is the set of principal methods used to determine the best solutions to mathematically described problems.
+
+Formally speaking, Mathematical Optimization is the process of the formulation and solution of a optimization problem of the general mathematical form:
+
+$$
+\underset{\text { w.r.t. } \mathbf{x}}{\text{minimize}} \, f(\mathbf{x}), \mathbf{x}=\left[x_{1}, x_{2}, \ldots, x_{n}\right]^{T} \in \mathbb{R}^{n}
+$$
+
+subject  to  the  constraints:
+
+% Column vector
+$$
+\begin{array}{ll}
+    g_{j}(\mathbf{x}) \leq 0, & j=1,2, \ldots, m \\
+    h_{j}(\mathbf{x})=0, & j=1,2, \ldots, r
+\end{array}
+$$
+
+$f(\mathbf{x})$, $g_{j}(\mathbf{x})$ and $h_{j}(\mathbf{x})$ are scalar functions of a vectorial variable $\mathbf{x}$. The components $x_i$ of $\mathbf{x}$ are called the \textit{variables of the optimization problem}, $f(\mathbf{x})$ is the \textit{objective function}, $g_{j}(\mathbf{x})$ are the \textit{inequality constraint functions} and $h_{j}(\mathbf{x})$ are the \textit{equality constraint functions}. The optimum vector $\mathbf{x}$ that solves the optimization problem is denoted with an asterisk $\mathbf{x^{*}}$ and the corresponding \textit{optimal objective function value }is $f(\mathbf{x^{*}})$.
+
+Optimization problems are usually solved using \textit{optimization algorithms}. These optimization algorithms are tailored to particular types of optimization problems. This is why classification of optimization models is a crucial part in the optimization problem.
+
+One important optimization problem type is the Quadratic Programming (QP) problem. It is an important class of problem on its own and also a subproblem for more general constrained optimization problems (sequential quadratic programming (SQP), augmented Lagrangian methods). These are the characteristics of QP problems:
+
+\begin{itemize}
+    \item \textbf{One objective function}. The most common case is the problem being defined by a single objective function, but there are also problems that can be modeled with no objective functions or using many of them.
+    \item \textbf{Deterministic optimization}. Depending on the nature of the data, an optimization problem can be either \textit{deterministic} or \textit{stochastic}. Due to measurement errors or more importantly because the data being used is data that represents the future, uncertainty has to be incorpored to the model. In that case we are talking about stochastic optimization. On the other hand, if data is assumed to be known with accuracy we are talking about deterministic optimization.
+    \item \textbf{Continuous optimization problem}. For some problems, the variables of the optimization problem can only take values from a discrete set, often a subset of integers, whereas for other problems they can take any value in $\mathbb{R}$. The former are called \textit{discrete optimization problems} and the latter are called \textit{continuous optimization problems}. Continuous optimization problems tend to be easier to solve because the continuity of the functions involved can be used to obtain information about the neighbourhood of the current value.
+    \item \textbf{Constrained optimization}. Sometimes there problem does not require to specify constraints for the variables of the optimization problem. When this is the case we are talking about \textit{unconstrained optimization}. If the problem requires a certain amount of constraints to be fulfilled it is called \textit{constrained optimization}.
+\end{itemize}
+
+\begin{figure}[H]
+    \caption[Optimization models taxonomy, with an emphasis on deterministic optimization problems.]{
+        Optimization models taxonomy, with an emphasis on deterministic optimization problems.
+    }
+    \centering
+    \includegraphics[width=\textwidth]{figs/optimizationtaxonomy.jpeg}
+\label{fig:optimizationtaxonomy}
+\end{figure}
+
+Moreover, a problem has to meet some more requirements so that it can be written as a QP problem:
+
+\begin{itemize}
+    \item The objective function cannot be any function, it needs to be a quadratic function that can be rewritten as follows:
+    $$
+    f(\mathbf{x}) = \frac{1}{2} \mathbf{x}^{T} \mathbf{Q} \mathbf{x}+\mathbf{c}^{T} \mathbf{x}
+    $$
+    where $\mathbf{Q}$ is a symmetric $n \times n$ matrix and $\mathbf{c} \in \mathbb{R}^{n \times 1}$.
+    \item The constraints must be described by a linear set of equations and inequations:
+    $$
+    \begin{array}{ll}
+        \mathbf{A} \mathbf{x} \leq \mathbf{0}, & \mathbf{A} \in \mathbb{R}^{m \times n} \\
+        \mathbf{A_{eq}} \mathbf{x} = \mathbf{0}, & \mathbf{A_{eq}} \in \mathbb{R}^{r \times n}
+    \end{array}
+    $$
+    \item Depending on the characteristics of the matrix $\mathbf{Q}$ the problem can be easily solved using polynomial-time algorithms. This is only posible if $\mathbf{Q}$ positive definite, that is, if all its eigenvalues are greater than or equal to $0$. When $\mathbf{Q}$ is positive definite, the problem is a \textit{convex QP problem}. In the contrary case, the problem is \textit{non-convex} and only local minimums can be found.
+\end{itemize}
