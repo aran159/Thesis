@@ -1225,7 +1225,7 @@ $$
     \text { minimize } & \frac{1}{2} \mathbf{x}^{T} \mathbf{Q} \mathbf{x}+\mathbf{c}^{T} \mathbf{x} &\\
     \text { subject to } & \mathbf{A} \mathbf{x} \leq \mathbf{0}, & \mathbf{A} \in \mathbb{R}^{m \times n} \\
     & \mathbf{A_{eq}} \mathbf{x} = \mathbf{0}, & \mathbf{A_{eq}} \in \mathbb{R}^{r \times n}
-    \end{array}
+\end{array}
 $$
 
 \subsubsection{Ding paper implementation}
@@ -1285,8 +1285,35 @@ $$
 
 \blindtext
 
+$\frac{1}{2} \dot{\mathbf{x}}^{\top} \dot{\mathbf{x}}$ is a constant w.r.t. the optimization variables in $\mathbf{\dot{q}}$, so even though it will change the inal value of the objective function, it does not affect $\mathbf{\dot{q}^{*}}$. Since the resulting $\mathbf{\dot{q}^{*}}$ is the only important output of the optimization process regarding our application, we can get rid of this term, resulting in the final expression:
+
 \begin{equation*}
     f(\dot{\mathbf{q}}) = \frac{1}{2}\dot{\mathbf{q}}^{\top}\left(\mathbf{J}^{\top} \mathbf{J}+\mu \mathbf{I}\right) \dot{\mathbf{q}}-\dot{\mathbf{x}}^{\top} \mathbf{J} \dot{\mathbf{q}}
 \end{equation*}
+
+Comparing this expression with REF, we have that:
+
+\begin{equation*}
+    \begin{array}{l}
+        \mathbf{Q} = \mathbf{J}^{\top} \mathbf{J}+\mu \mathbf{I} \\
+        \mathbf{c}^{\top} = -\dot{\mathbf{x}}^{\top} \mathbf{J}
+    \end{array}
+\end{equation*}
+
+We can verify $\mathbf{Q}$ is semi-positive definite and that consequently the problem is convex with the following two theorems:
+
+\begin{theorem}
+    \label{th:transposeeigenvalues}
+    Let $\mathbf{A} \in \mathbb{R}^{m \times n}$. Then, $\mathbf{A} \mathbf{A} ^{\top}$ is a positive semi-definite matrix.
+\end{theorem}
+
+\begin{theorem}
+    \label{th:sumeigenvalues}
+    The sum of any two (semi)positive definite matrices of the same size is (semi)positive definite.
+\end{theorem}
+
+$\mu \mathbf{I}$ is semi-positive definite because it is a diagonal matrix with non-negative coefficients and the eigenvalues of a diagonal matrices are the coefficients themselves. $\mathbf{J}^{\top} \mathbf{J}$ because of theorem \ref{th:transposeeigenvalues}. Then, by theorem \ref{th:sumeigenvalues} we know that $\mathbf{Q}$ is semi-positive definite.
+
+
 
 As far as the constraints are concerned, three types are implemented. First type is used for joint position, velocity and acceleration limiting and two different types of constraints for obstacle avoidance.
