@@ -1153,7 +1153,7 @@ The other control points are treated as cartesian constraints that are translate
 \subsection{Optimization based collision avoidance algorithm}
 \label{ss:optimization}
 
-The approach of the method presented in section \ref{ss:flacco} makes use of a set of mathematical expressions to specify the direction in which the end effector has to move and to apply simple upper and lower boundaries to the joint velocities calculated. In this section we try a different approach that allows to design and solve problems with more complex constraints: \textbf{Mathematical Optimization}.
+The approach of the method presented in section \ref{ss:flacco} makes use of a set of analytical mathematical expressions to specify the direction in which the end effector has to move and to apply simple upper and lower boundaries to the joint velocities calculated. In this section we try a different approach that allows to design and solve problems with more complex constraints: \textbf{Mathematical Optimization}.
 
 We start introduction Mathematical Optimization and classifying the different kinds of optimization problems there are, emphasizing \textbf{Quadratic Programming}, since the collision avoidance can be suitably defined in this form. We implement the academic article ``Collision Avoidance with Proximity Servoing for Redundant Serial Robot Manipulators'' \cite{dingcollision}, published by Y. Ding and U. Thomas in May 2020.
 
@@ -1220,18 +1220,22 @@ Moreover, a problem has to meet some more requirements so that it can be written
 
 So, the quadratic problem can be formulated as follows:
 
-$$
-\begin{array}{lll}
-    \text { minimize } & \frac{1}{2} \mathbf{x}^{T} \mathbf{Q} \mathbf{x}+\mathbf{c}^{T} \mathbf{x} &\\
-    \text { subject to } & \mathbf{A} \mathbf{x} \leq \mathbf{0}, & \mathbf{A} \in \mathbb{R}^{m \times n} \\
-    & \mathbf{A_{eq}} \mathbf{x} = \mathbf{0}, & \mathbf{A_{eq}} \in \mathbb{R}^{r \times n}
-\end{array}
-$$
+
+\begin{equation}
+    \label{eq:QP}
+    \begin{array}{lll}
+        \text { minimize } & \frac{1}{2} \mathbf{x}^{T} \mathbf{Q} \mathbf{x}+\mathbf{c}^{T} \mathbf{x} &\\
+        \text { subject to } & \mathbf{A} \mathbf{x} \leq \mathbf{0}, & \mathbf{A} \in \mathbb{R}^{m \times n} \\
+        & \mathbf{A_{eq}} \mathbf{x} = \mathbf{0}, & \mathbf{A_{eq}} \in \mathbb{R}^{r \times n}
+    \end{array}
+\end{equation}
 
 \subsubsection{Ding paper implementation}
 \label{sss:ding}
 
-\blindtext
+Intro to ding.
+
+Objective function.
 
 \begin{equation*}
     f(\dot{\mathbf{q}}) = \underbrace{\frac{1}{2} \mathbf{(\dot{x}-J\dot{q})^{T} (\dot{x}-J\dot{q})}}_\textbf{1} + \underbrace{\frac{\mu}{2} \mathbf{\dot{q}^{T} \dot{q}}}_\textbf{2}
@@ -1264,7 +1268,7 @@ $$
     \end{equation*}
 \end{enumerate}
 
-\blindtext
+Expansion of the expression to meet the form.
 
 \begin{equation*}
     \begin{split}
@@ -1283,8 +1287,6 @@ $$
     \end{split}
 \end{equation*}
 
-\blindtext
-
 $\frac{1}{2} \dot{\mathbf{x}}^{\top} \dot{\mathbf{x}}$ is a constant w.r.t. the optimization variables in $\mathbf{\dot{q}}$, so even though it will change the inal value of the objective function, it does not affect $\mathbf{\dot{q}^{*}}$. Since the resulting $\mathbf{\dot{q}^{*}}$ is the only important output of the optimization process regarding our application, we can get rid of this term, resulting in the final expression:
 
 \begin{equation*}
@@ -1300,7 +1302,7 @@ Comparing this expression with REF, we have that:
     \end{array}
 \end{equation*}
 
-We can verify $\mathbf{Q}$ is semi-positive definite and that consequently the problem is convex with the following two theorems:
+As stated in section \ref{sss:optimizationintro}, the problem needs to be convex in order to be able to find a global optimal solution in a minimum amount of time. This will only be the case if we can verify $\mathbf{Q}$ will always be semi-positive definite, or what is the same, its eigenvalues will be non-negative.
 
 \begin{theorem}
     \label{th:transposeeigenvalues}
@@ -1314,6 +1316,94 @@ We can verify $\mathbf{Q}$ is semi-positive definite and that consequently the p
 
 $\mu \mathbf{I}$ is semi-positive definite because it is a diagonal matrix with non-negative coefficients and the eigenvalues of a diagonal matrices are the coefficients themselves. $\mathbf{J}^{\top} \mathbf{J}$ because of theorem \ref{th:transposeeigenvalues}. Then, by theorem \ref{th:sumeigenvalues} we know that $\mathbf{Q}$ is semi-positive definite.
 
+As far as the constraints are concerned, there are three types. First one is used for joint positions, velocities and accelerations limiting and the other two are for obstacle avoidance.
+
+To limit joint positions, velocities and accelerations, we assume that the restrictions that limit these can be written as follows:
+$$
+\begin{aligned}
+    \mathbf{q_{\min}} & \leq \mathbf{q} \leq \mathbf{q_{\max}} \\
+    -\mathbf{\dot{q}_{\max}} & \leq \mathbf{\dot{q}} \leq \mathbf{\dot{q}_{\max}} \\
+    -\mathbf{\ddot{q}_{\max}} & \leq \mathbf{\ddot{q}} \leq \mathbf{\ddot{q}_{\max}}
+\end{aligned}
+$$
+
+Written in this form, the joint ranges are not necessarily symmetric, while joint velocities and accelerations are. Refer to table \ref{t:jointlimits} to see the actual values of $\mathbf{q_{\min}}$, $\mathbf{q_{\max}}$, $\mathbf{v_{\max}}$ and $\mathbf{a_{\max}}$ for Franka Panda Emika.
+
+Position, velocity and acceleration restrictions can be brought to the velocity level $\dot{\mathbf{q}}$, thus to limit the optimization variables in which the optimization problem is being defined. In \cite{flacco2012motion}, they present a method to do this. The final formulation for the restrictions is:
+
+\begin{equation}
+    \label{eq:jerkylimit}
+    \begin{array}{l}
+        \dot{q}_{\min , i}=\max \left\{\frac{q_{\min , i}-q_{i}}{T},-v_{\max , i},-\sqrt{2 a_{\max , i}\left(q_{i}-q_{\min , i}\right)}\right\} \\
+        \dot{q}_{\max , i}=\min \left\{\frac{q_{\max, i}-q_{i}}{T}, v_{\max , i}, \sqrt{2 a_{\max , i}\left(q_{\max , i}-q_{i}\right)}\right\}
+    \end{array}
+\end{equation}
 
 
-As far as the constraints are concerned, three types are implemented. First type is used for joint position, velocity and acceleration limiting and two different types of constraints for obstacle avoidance.
+where $q_{i}$ is the current position of joint $i$ and the is $T$ is the control period.
+
+These restrictions could be rewritten as 4 linear equations to meet the structure in equation \ref{eq:QP}. However, most optimization algorithms can deal with a different kind of constraint for this specific kind of restriction, where only upper and lower boundaries for the optimization variables are required. This type of constraints are named as \textbf{box constraints} and can be expressed as:
+
+$$
+\mathbf{\dot{q}_{\min}} \leq \mathbf{\dot{q}} \leq \mathbf{\dot{q}_{\max}}
+$$
+
+where the components of $\mathbf{\dot{q}_{\min}}$ and $\mathbf{\dot{q}_{\max}}$ are calculated with the expression \ref{eq:jerkylimit}.
+
+Before we continue with the last two types of constraints, an important change with respect to the previously presented method in section \ref{ss:flacco} has to be explained. There, a set of control points where predefined in order to represent the whole kinematic chain of the robot. This was done covering the body with spheres centered in those control points. In this section, in contrast, control points are not predefined. For each sensed point representing an obstacle, the closest point in the kinematic chain of the robot is assigned to it.
+
+In order to accomplish this the method presented in \cite{stackexchangeSegment} has been implemented.
+
+
+\begin{enumerate}
+    \item Let the robot be represented by a series of segments defined by pairs of points. Let $P$ be the obstacle point to which we want to assign the closest point in the robot.
+
+    \item For each segment that goes from $A$ to $B$:
+
+    \begin{enumerate}
+        \item Write the vector between $P$ and a point that is $t$ from $A$ to $B$. (When $t = 0$, the point is $A$; when $t = 1$, the point is $B$.)
+
+
+        \begin{equation}
+            \label{eq:distancecontrolpoint}
+            f(t) = (1-t)A + t B  - P
+        \end{equation}
+
+        \item Now let $g(t) = \| f(t) \|^2$, which is norm of that vector squared. We want to find the value of $t$ that minimizes $g(t)$.
+        \item Develop expression \ref{eq:distancecontrolpoint},
+        \begin{equation*}
+            \begin{split}
+            g(t) & = \|f(t)\|^2 \\
+            &= ((1-t)A + t B  - P)^T \cdot (1-t)A + t B  - P \\
+            &= (t (B-A) + A-P)^T \cdot (t (B-A) + (A-P))
+            \end{split}
+        \end{equation*}
+
+        Let $v = B-A$ and $u = A - P$,
+
+
+        \begin{equation*}
+            \begin{split}
+            g(t) & = \|f(t)\|^2 \\
+            &= (t v + u)^T \cdot (t v + u)\\
+            &= t^2 \|v\|^2  + 2t (v \cdot u) + \|u\|^2
+            \end{split}
+        \end{equation*}
+
+        \item Calculate $g'(t)$,
+
+        \begin{align}
+        g'(t) & = 2t \|v\|^2  + 2 (v \cdot u) = 2t (v \cdot v)  + 2 (v \cdot u).
+        \end{align}
+
+        \item Set to zero and solve to get the value of $t$ that minimizes $g(t)$. This particular function has only one minimum, so if you find a critical point you know it is a minimum value.
+
+        $$
+        t = -\frac{v \cdot u}{v \cdot v}.
+        $$
+
+        \item Once the value of $t$ is computed, if it is between $0$ and $1$, then the closest point is $(1-t)A + t B$. If it is not, $\min\left(g(0),g(1)\right)$ is the answer.
+    \end{enumerate}
+
+    \item Choose the point corresponding to the minimum distance value between all of the segments.
+\end{enumerate}
