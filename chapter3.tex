@@ -1316,6 +1316,8 @@ As stated in section \ref{sss:optimizationintro}, the problem needs to be convex
 
 $\mu \mathbf{I}$ is semi-positive definite because it is a diagonal matrix with non-negative coefficients and the eigenvalues of a diagonal matrices are the coefficients themselves. $\mathbf{J}^{\top} \mathbf{J}$ because of theorem \ref{th:transposeeigenvalues}. Then, by theorem \ref{th:sumeigenvalues} we know that $\mathbf{Q}$ is semi-positive definite.
 
+% TODO: Code for main task
+
 As far as the constraints are concerned, there are three types. First one is used for joint positions, velocities and accelerations limiting and the other two are for obstacle avoidance.
 
 To limit joint positions, velocities and accelerations, we assume that the restrictions that limit these can be written as follows:
@@ -1352,8 +1354,7 @@ where the components of $\mathbf{\dot{q}_{\min}}$ and $\mathbf{\dot{q}_{\max}}$ 
 
 Before we continue with the last two types of constraints, an important change with respect to the previously presented method in section \ref{ss:flacco} has to be explained. There, a set of control points where predefined in order to represent the whole kinematic chain of the robot. This was done covering the body with spheres centered in those control points. In this section, in contrast, control points are not predefined. For each sensed point representing an obstacle, the closest point in the kinematic chain of the robot is assigned to it.
 
-In order to accomplish this the method presented in \cite{stackexchangeSegment} has been implemented.
-
+In order to accomplish the dynamic assignation of control points, the method presented in \cite{stackexchangeSegment} has been implemented. These are the steps followed to find the closest point in the robot kinematic chain to a given point in space:
 
 \begin{enumerate}
     \item Let the robot be represented by a series of segments defined by pairs of points. Let $P$ be the obstacle point to which we want to assign the closest point in the robot.
@@ -1402,8 +1403,92 @@ In order to accomplish this the method presented in \cite{stackexchangeSegment} 
         t = -\frac{v \cdot u}{v \cdot v}.
         $$
 
-        \item Once the value of $t$ is computed, if it is between $0$ and $1$, then the closest point is $(1-t)A + t B$. If it is not, $\min\left(g(0),g(1)\right)$ is the answer.
+        \item Once the value of $t$ is computed, if it is between $0$ and $1$, then the closest point is $(1-t)A + t B$. If it is not, $\min\{g(0),g(1)\}$ is the answer.
     \end{enumerate}
 
-    \item Choose the point corresponding to the minimum distance value between all of the segments.
+    \item From the list of points associated to each of the segments, choose the one corresponding to the minimum distance.
 \end{enumerate}
+
+The first kind of constraint for obstacle avoidance will restrict the robot's approach velocity towards the obstacle, as shown in figure \ref{fig:firstconstraint}.
+
+Given a position of an obstacle $h_i$, the orthogonal projection of the final velocity $\dot{\mathbf{x}}_{\mathrm{c}, i}$ of point $c_i$ will be limited by a certain amount $\dot{x}_{\mathrm{a}, i}$. Every $\dot{\mathbf{x}}_{\mathrm{c}, i}$ within the green area will be permitted.
+
+Moreover, if the value of $\dot{x}_{\mathrm{a}, i}$ is negative, then the red boundary between the green and red areas will be moved to the opposite site of $\hat{\mathbf{d}_i}$, forcing a repulsive action.
+
+The value of $\dot{x}_{\mathrm{a}, i}$ then defines the behaviour. In \cite{dingcollision} they propose a piecewise defined function to calculate the value, based on the distance at which the obstacle is located with respect to the robotic arm, shown in figure \ref{fig:plotxai}.
+
+\begin{figure}[htbp]
+    \caption[]{
+    First constraint
+    }
+    \begin{center}
+    \includegraphics[width=120mm]{figs/firstconstraint.eps}
+    \end{center}
+    \label{fig:firstconstraint}
+\end{figure}
+
+\begin{figure}[htbp]
+    \caption[]{
+    plotxai
+    }
+    \begin{center}
+    \includegraphics[width=120mm]{figs/plotxai.eps}
+    \end{center}
+    \label{fig:plotxai}
+\end{figure}
+
+Formally speaking, the restriction for one obstacle is formulated as follows:
+
+\begin{equation*}
+    \hat{\mathbf{d}_i}^{\top} \dot{\mathbf{x}}_{\mathrm{c}, i} =
+    \hat{\mathbf{d}}^{\top} \mathbf{J}_{\mathrm{p}_{\mathbf{c}, i}} \dot{\mathbf{q}} \leq
+    \dot{x}_{\mathrm{a}, i}
+\end{equation*}
+
+This defines one linear inequation, where
+$\hat{\mathbf{d}}^{\top} \mathbf{J}_{\mathrm{p}_{\mathbf{c}, i}} \in \mathbb{R}^{1 \times n}$
+is the coefficients vector,
+$\dot{\mathbf{q}} \in \mathbb{R}^{n \times 1}$
+are the unknowns and
+$\dot{x}_{\mathrm{a}, i} \in \mathbb{R}$
+is the right side of the inequation. As one obstacle defines one new restriction, for $m$ obstacle points, $m$ rows will be added to elements $\mathbf{A}$ and $\mathbf{b}$ in the QP problem definition in \ref{eq:QP}.
+
+As for the second type of constraint, an overall increase in the distance of the points in the robot kinematic chain to the obstacles will be pursued. In terms of mathematical analysis, a continuous function is increasing in time when its derivative with respect to time is positive. By the chain rule, this is how the derivative of a single distance norm with respect to time would be calculated:
+
+\begin{equation*}
+    \frac{ d \|\mathbf{d_i}\|}{dt} =
+    \frac{ \partial \|\mathbf{d_i}\|}{\partial \mathbf{q}} \frac{d \mathbf{q}}{dt} =
+    \nabla_{\mathbf{q}}\|\mathbf{d_i}\| \dot{\mathbf{q}}
+\end{equation*}
+
+As what we want is an overall increase of the distance instead of increasing just one distance, a weight based formulation can be employed:
+
+\begin{equation*}
+    \begin{bmatrix}
+        w_1 & \cdots & w_m
+    \end{bmatrix}
+    \begin{bmatrix}
+        \frac{ d \|\mathbf{d_1}\|}{dt} \\ \cdots \\ \frac{ d \|\mathbf{d_m}\|}{dt}
+    \end{bmatrix}
+    =
+    \begin{bmatrix}
+        w_1 & \cdots & w_m
+    \end{bmatrix}
+    \begin{bmatrix}
+        \nabla_{\mathbf{q}}\|\mathbf{d_1}\| \\
+        \cdots \\
+        \nabla_{\mathbf{q}}\|\mathbf{d_m}\|
+    \end{bmatrix}
+    \dot{\mathbf{q}}
+    \leq 0
+\end{equation*}
+
+The weights are set to be indirectly proportional to the distance, so that closest obstacles have highest priority:
+
+\begin{equation*}
+    w_i = \frac{\frac{1}{\|\mathbf{d_i}\|}}{\sum_{j=1}^{m} \frac{1}{\|\mathbf{d_j}\|}}
+\end{equation*}
+
+This last type of constraint adds a new row to $\mathbf{A}$ and $\mathbf{b}$.
+
+% TODO: Code for constraints
