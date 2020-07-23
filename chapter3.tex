@@ -1,11 +1,12 @@
 \chapter{Technical Approach}
 \label{ch:tec}
 
-In this chapter, we will explain the technical means by which the objective of this thesis has been approached. Firstly, in section \ref{s:pre} we start talking about the basic elements that have been used during the development this work. In order to make the robot avoid obstacles with proximity data, obstacles need to be located with respect to the robots’ kinematic chain. That's why, in section \ref{ss:calibration} we briefly present a framework for automatic kinematic calibration that leverages an IMU to accurately estimate the pose (position and orientation) of skin units along the surface of a robot. The main section is section \ref{s:control}, where the methods for collision avoidance are presented.
+In this chapter, we will explain the technical means by which the objective of this thesis has been approached. Firstly, in section \ref{s:pre} we start talking about the basic elements that have been used during the development this work, such us the robot platform employed or software libraries. In order to make the robot avoid obstacles with proximity data, obstacles need to be located with respect to the robots’ kinematic chain. That's why, in section \ref{s:perception} we present the method to sense the environment through proximity sensing. The main section is section \ref{s:control}, where the methods for collision avoidance are explained.
 
 \section{Required resources}
 \label{s:pre}
 Introductory paragraph. General presentation of the required resources.
+% TODO: Introductory paragraph. General presentation of the required resources.
 
 \subsection{Robot platform}
 \label{ss:panda}
@@ -577,8 +578,8 @@ and the point will not be added to the message.
 
 The points are packed in a custom created message called \lstinline{ros_robotic_skin::PointArray} , whose only field is an array of \lstinline{geometry_msgs::Point}s. This is done at \SI{50}{\hertz}, or what is the same, every \SI{20}{\milli \second}.
 
-% TODO
-BUFFER IS LEFT
+% TODO: Buffer
+Buffer
 
 \subsection{Visualization in \textit{rviz}}
 \label{ss:visualization}
@@ -589,7 +590,7 @@ There are several dysplay types that can be visualized in rviz. We use \lstinlin
 
 We have called the class that implements the visualization \lstinline{ProximityVisualizer}. In the initializer of the class, shown in listing \ref{lst:proximityinitializer}, the node is suscribed  to the data published in the topic \lstinline{live_points} by \lstinline{proximity_listener}. The data received in that topic will be processed in \lstinline{ProximityVisualizer::Callback}. Next, the publication of messages of type \lstinline{MarkerArray} in the topic \lstinline{visualization_marker_array} is set up. The general properties that are kept through all of the \lstinline{Marker}s that will be added to the \lstinline{MarkerArray} are also set up and the rest of the properties are initialized.
 
-Note that these properties alLow to set up the \lstinline{Marker}'s shape, the size, the color, the coordinates in which it will be located, as well as the frame in which those coordinates are written and the orientation. \lstinline{namespace} allows organization within the same topic so that \lstinline{Marker}s can be further classified. The \lstinline{id} of the marker is unique and whenever a new marker with the same \lstinline{id} is published, the previous one is deleted. Finally, \lstinline{action} can be \lstinline{ADD}, \lstinline{DELETE} or \lstinline{DELETEALL}.
+Note that these properties alLow to set up the \lstinline{Marker}'s shape, the size, the color, the coordinates in which it will be located, as well as the frame in which those coordinates are written and the orientation. \lstinline[language=python]{namespace} allows organization within the same topic so that \lstinline{Marker}s can be further classified. The \lstinline{id} of the marker is unique and whenever a new marker with the same \lstinline{id} is published, the previous one is deleted. Finally, \lstinline{action} can be \lstinline{ADD}, \lstinline{DELETE} or \lstinline{DELETEALL}.
 
 \begin{lstlisting}[caption={Initializer of the ProximityVisualizer class},captionpos=b,label={lst:proximityinitializer}]
 ProximityVisualizer::ProximityVisualizer()
@@ -688,8 +689,8 @@ The points are seen in \textit{rviz} as shown in figure \ref{fig:visualizationpo
 \section{Control}
 \label{s:control}
 
-% TODO
-INTRODUCTORY PARAGRAPH
+% TODO: Introductory paragraph big control section
+Introductory paragraph
 
 \subsection{The Kinematic Control Problem}
 \label{ss:kinematiccontrol}
@@ -973,6 +974,7 @@ $$
 
 As described in section \ref{sss:geomrep}, $^{0}\mathbf{z}_{i-1}$ is joint $i$'s $z$ axis, which is a unitary vector in the direction of the joint. $^{0}\mathbf{z}_{i-1}$ coincides both the direction in which a prismatic joint contributes to the end effector velocity $\mathbf{v}_{\text{end effector}}$ and with the contribution of a revolute joint to the angular velocity of the end effector $\mbox{\boldmath$\omega$}_{\text{end effector}}$. The magnitude $\mathbf{z}_{i-1} \times ^{i-1}\boldsymbol{p}_{\text{end effector}}$ is due to the $\mbox{\boldmath$\omega$} \times \overrightarrow{\mathbf{OP}}$ part in equation \ref{eq:velfield}. It is obvious that the contribution of a prismatic joint to $\mbox{\boldmath$\omega$}_{\text{end effector}}$ is $\mathbf{0}$.
 
+% TODO: How the jacobian is obtained in KDL
 KDL
 
 \subsubsection{Inverse Instantaneous Kinematics}
@@ -1026,6 +1028,14 @@ No linearly independent set can have a size greater than the dimension of the en
 Therefore, because of this last theorem, it is obvious that the maximum rank for a given matrix $\mathbf{A} \in \mathbb{R}^{m \times n} $ is the minimum value between $m$ and $n$. The rank of this matrix can only be equal to or less than that maximum rank. In the case of redundant robots, the maximum rank ${\mathbf{J}(\mathbf{{q}})}$ will always be given by the dimension of the row space $m$, that is, the number of variables needed to define the task.
 
 \begin{theorem}
+    Any linear system's solution set has the form
+\[
+\left\{\vec{p}+c_{1} \vec{\beta}_{1}+\cdots+c_{k} \vec{\beta}_{k} \mid c_{1}, \ldots, c_{k} \in \mathbb{R}\right\}
+\]
+where \( \vec{p} \) is any particular solution and where the number of vectors \( \vec{\beta}_{1}, \ldots, \) \( \vec{\beta}_{k} \) equals the dimension of the space of solutions associated to homogeneous system.
+\end{theorem}
+
+\begin{theorem}
 For linear systems with $n$ unknowns and with matrix of coefficients $\mathbf{A}$, the statements
 \begin{enumerate}
     \item the rank of $\mathbf{A}$ is $r$
@@ -1034,13 +1044,22 @@ For linear systems with $n$ unknowns and with matrix of coefficients $\mathbf{A}
 are equivalent.
 \end{theorem}
 
-Consequently, the homogeneous system associated to equation \ref{eq:linearEquations}, ${\mathbf{J}(\mathbf{{q}})} \cdot  {\mathbf{\dot{q}}} = {\mathbf{0}}$, has a solution space of dimension $(\text{n} - \text{r}) \geq (\text{n} - \text{max}({\text{r}})) = (\text{n} - \text{m})$. In the case of Panda Franka Emika, the solution space of the associated homogeneous system will always be greater than or equal to $1$: $(\text{n} - \text{r}) \geq (\text{n} - \text{max}(\text{m})) = (7-6)$.
 
-However, the existance of solution to the general equation requires a particular solution to exist also, because of the following theorem:
+Consequently, the homogeneous system associated to equation \ref{eq:linearEquations}, ${\mathbf{J}(\mathbf{{q}})} \cdot  {\mathbf{\dot{q}}} = {\mathbf{0}}$, has a solution space of dimension $(\text{n} - \text{r}) \geq (\text{n} - \text{max}({\text{r}})) = (\text{n} - \text{m})$. In the case of Panda Franka Emika, the solution space of the associated homogeneous system will always be greater than or equal to $1$: $(\text{n} - \text{r}) \geq (\text{n} - \text{max}(\text{m})) = (7-6)$ and in consequence, if a solution exists equation \ref{eq:linearEquations} will have infinitely many solutions.
+
+However, the existance of solution to the actual system of equations, and not its associated homogeneous system, is not guaranteed:
+
+\begin{theorem}
+    For a linear system of equations Ax = b, a solution exists for all b if and only if the rank of A is equal to the dimension of b, i.e, A is full rank.
+\end{theorem}
+
+This means that every time ${\mathbf{J}(\mathbf{{q}})}$ loses a rank, $r < m$, equation \ref{eq:linearEquations} won't have a solution for all $\dot{x}_{d}$ and the ability to control one axis either of translation or rotation will lost. The positions $q$ in which this situation is given are called singularities.
+
+In table \ref{tab:numbersolutions}, we can see that all the possible situations for equation \ref{eq:linearEquations} are summarized by the last column. If a solution exists there are infinitely many solutions, with dimension $n-m$.
 
 % Please add the following required packages to your document preamble:
 % \usepackage{multirow}
-\begin{table}[]
+\begin{table}[H]
     \caption{Number of solutions of a linear system}
     \centering
     \label{tab:numbersolutions}
@@ -1053,21 +1072,15 @@ However, the existance of solution to the general equation requires a particular
     \end{tabular}
 \end{table}
 
-% TODO
-\textbf{PROVE THAT IF} $r < m$ no particular solution exists.
-For a linear system of equations Ax = b, a solution exists for all b if and only if the rank of A is equal to the dimension of b, i.e, A is full rank.
+Summing up, the kinematic control problem has been defined as a set of linear equations (equation \ref{eq:linearEquations}) and the existance of the solutions has been studied until now. Next, we must find a solution to the set of equations.
 
-Therefore when the rank of ${\mathbf{J}(\mathbf{{q}})}$ becomes smaller than $m$, the ability to control one axis either of translation or rotation is lost. The positions $q$ in which this situation is given are called singularities.
-
-Summing up, the problem has been defined as a set of linear equations (equation \ref{eq:linearEquations}) and the existance of the solutions has been studied until now. Next, we must find a solution to the set of equations.
-
-% TODO
+% TODO: Pseudoinverse
 
 Pseudoinverse
 
 However, doesn't avoid singularities.
 
-% TODO
+% TODO: Numerical instability
 \textbf{NUMERIC INSTABILITY SINGULARITIES OF PSEUDOINVERSE}. Probably dividing something by zero.
 
 The reader may think that it would be useful to have a measure of when one of this situations is about to take place. \cite{yoshikawa1985dynamic} introduced a measure that indicates how close a robot is from a singularity:
@@ -1078,13 +1091,14 @@ This value tends to $0$ when the vector $q$ tends to a position in which the ran
 
 \textbf{GENERAL SOLUTION OF THE EQUATION}
 
-% TODO
+% TODO: middle range of the joints
 \textbf{Leageouis and middle range of the joints}
 
 
 \subsubsection{End effector Position Control through Inverse Instantaneous Kinematics}
 \label{sss:eepositioncontrol}
 
+% TODO: Build last section of intro problem
 
 \begin{lstlisting}[caption={CartesianPositionController.cpp},captionpos=b]
 void moveToPosition(const Eigen::Vector3d xd)
@@ -1143,11 +1157,13 @@ The other control points are treated as cartesian constraints that are translate
 \subsubsection{Potential field methods and velocity estimation applied to the effector}
 \label{sss:flaccorepulsive}
 
+% TODO: flaccorepulsive
 \blindtext
 
 \subsubsection{Joint velocity constraints to avoid collision of any point in the robot}
 \label{sss:flaccobody}
 
+% TODO: flaccobody
 \blindtext
 
 \subsection{Optimization based collision avoidance algorithm}
@@ -1233,8 +1249,10 @@ So, the quadratic problem can be formulated as follows:
 \subsubsection{Ding paper implementation}
 \label{sss:ding}
 
+% TODO: Title and Intro of ding section
 Intro to ding.
 
+% TODO: Introduce the objective function
 Objective function.
 
 \begin{equation*}
@@ -1242,7 +1260,7 @@ Objective function.
 \end{equation*}.
 
 \begin{enumerate}
-    \item This is the quadratic error between the robot's target velocity and its actual motion given the optimization variables $\mathbf{dot{q}}$.
+    \item This is the quadratic error between the robot's target velocity and its actual motion given the optimization variables $\mathbf{\dot{q}}$.
 
     \begin{equation*}
             \frac{1}{2}\left(\mathbf{\dot{x}-J\dot{q}}\right)^{\mathrm{T}} \left(\mathbf{\dot{x}-J\dot{q}}\right) = \frac{1}{2}\|\mathbf{\dot{x}-J\dot{q}}\|^{2}
@@ -1293,7 +1311,7 @@ $\frac{1}{2} \dot{\mathbf{x}}^{\top} \dot{\mathbf{x}}$ is a constant w.r.t. the 
     f(\dot{\mathbf{q}}) = \frac{1}{2}\dot{\mathbf{q}}^{\top}\left(\mathbf{J}^{\top} \mathbf{J}+\mu \mathbf{I}\right) \dot{\mathbf{q}}-\dot{\mathbf{x}}^{\top} \mathbf{J} \dot{\mathbf{q}}
 \end{equation*}
 
-Comparing this expression with REF, we have that:
+Comparing this expression to \ref{eq:QP}, we have that:
 
 \begin{equation*}
     \begin{array}{l}
@@ -1419,7 +1437,7 @@ The value of $\dot{x}_{\mathrm{a}, i}$ then defines the behaviour. In \cite{ding
 
 \begin{figure}[htbp]
     \caption[]{
-    First constraint
+        Restriction of the approach velocity of a point towards the obstacle.
     }
     \begin{center}
     \includegraphics[width=120mm]{figs/firstconstraint.eps}
@@ -1429,7 +1447,7 @@ The value of $\dot{x}_{\mathrm{a}, i}$ then defines the behaviour. In \cite{ding
 
 \begin{figure}[htbp]
     \caption[]{
-    plotxai
+    Value of $\dot{x}_{\mathrm{a}, i}$ depending on $ \|\mathbf{d_i}\|$.
     }
     \begin{center}
     \includegraphics[width=120mm]{figs/plotxai.eps}
@@ -1492,3 +1510,5 @@ The weights are set to be indirectly proportional to the distance, so that close
 This last type of constraint adds a new row to $\mathbf{A}$ and $\mathbf{b}$.
 
 % TODO: Code for constraints
+
+% TODO: Algorithm set up in ALGLIB
