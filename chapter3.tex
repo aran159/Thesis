@@ -5,8 +5,7 @@ In this chapter, we will explain the technical means by which the objective of t
 
 \section{Required resources}
 \label{s:pre}
-Introductory paragraph. General presentation of the required resources.
-% TODO: Introductory paragraph. General presentation of the required resources.
+In this section we present the various types of tools that have employed throught the process. We start presenting the robotic platform employed for carrying on the experiments. Then we define what robotic middleware is, why it is useful and we present the specific robotic middleware that have been employed: ROS. We finish this section presenting the several software libraries that have been useful in the implementation of the concepts and ideas that will be presented in the sections that follow.
 
 \subsection{Robot platform}
 \label{ss:panda}
@@ -689,8 +688,7 @@ The points are seen in \textit{rviz} as shown in figure \ref{fig:visualizationpo
 \section{Control}
 \label{s:control}
 
-% TODO: Introductory paragraph big control section
-Introductory paragraph
+This is the main section of this work. Here we present all the concepts necessary for safe motion control, from fundamental robot kinematics to obstacle avoidance algorithms and different means by which robot redundancy can be leveraged.
 
 \subsection{The Kinematic Control Problem}
 \label{ss:kinematiccontrol}
@@ -974,8 +972,37 @@ $$
 
 As described in section \ref{sss:geomrep}, $^{0}\mathbf{z}_{i-1}$ is joint $i$'s $z$ axis, which is a unitary vector in the direction of the joint. $^{0}\mathbf{z}_{i-1}$ coincides both the direction in which a prismatic joint contributes to the end effector velocity $\mathbf{v}_{\text{end effector}}$ and with the contribution of a revolute joint to the angular velocity of the end effector $\mbox{\boldmath$\omega$}_{\text{end effector}}$. The magnitude $\mathbf{z}_{i-1} \times ^{i-1}\boldsymbol{p}_{\text{end effector}}$ is due to the $\mbox{\boldmath$\omega$} \times \overrightarrow{\mathbf{OP}}$ part in equation \ref{eq:velfield}. It is obvious that the contribution of a prismatic joint to $\mbox{\boldmath$\omega$}_{\text{end effector}}$ is $\mathbf{0}$.
 
-% TODO: How the jacobian is obtained in KDL
-KDL
+In section \ref{sss:KDL} we presented KDL as the library we would use to deal with problems dealing with fundamental robot kinematics. This is how the robotic jacobian is obtained in KDL:
+
+\begin{lstlisting}[caption={Implementation of the function \lstinline{computeJacobian}.},captionpos=b]
+Eigen::MatrixXd KDLSolver::computeJacobian
+(
+    std::string linkName,
+    Eigen::VectorXd q
+)
+{
+    // Obtain the description of the robot up to link linkName
+    KDL::Chain kdlChain;
+    kdlTree.getChain("panda_link0", linkName, kdlChain);
+    int number_joints = kdlChain.getNrOfJoints();
+    // Construct the jacobian solver with the description obtained
+    KDL::ChainJntToJacSolver JSolver =
+        KDL::ChainJntToJacSolver(kdlChain);
+    // Prepare the data for the solver
+    KDL::Jacobian J;
+    J.resize(number_joints);
+    KDL::JntArray KDLJointArray(7);
+    KDLJointArray.data = q;
+    KDLJointArray.resize(number_joints);
+    // Obtain the jacobian
+    JSolver.JntToJac(KDLJointArray, J);
+    return J.data;
+}
+\end{lstlisting}
+
+Note that \lstinline{linkName} lets us decide which is the link for we want to obtain the jacobian. If the link is other than the end effector we will call it \textit{partial jacobian}.
+
+Later, in section \ref{ss:optimization} we will upgrade this function so that it will let us obtain the jacobian for any point attached to a link and not only the one corresponding to the joints.
 
 \subsubsection{Inverse Instantaneous Kinematics}
 \label{sss:IIK}
@@ -1074,25 +1101,52 @@ In table \ref{tab:numbersolutions}, we can see that all the possible situations 
 
 Summing up, the kinematic control problem has been defined as a set of linear equations (equation \ref{eq:linearEquations}) and the existance of the solutions has been studied until now. Next, we must find a solution to the set of equations.
 
-% TODO: Pseudoinverse
+The most widely tool used to find the solution is the \textbf{Moore-Penrose pseudoinverse} of the jacobian $\mathbf{J}^{+}(\mathbf{{q}})$, where $\mathbf{J}^{+}(\mathbf{{q}}) = \mathbf{J}^{\top}\left(\mathbf{{q}})
+(\mathbf{J}(\mathbf{{q}}) \mathbf{J}^{\top}(\mathbf{{q}})\right)^{-1}$.
+The complete set of solutions can be described as:
 
-Pseudoinverse
+\begin{equation}
+    \label{eq:generalsolution}
+    {\mathbf{\dot{q}}} =
+    {\mathbf{J}^{+}(\mathbf{{q}})}
+    {\mathbf{\dot{x}_{d}}}
+    +
+    \left({\mathbf{I}} - {\mathbf{J}^{+}(\mathbf{{q}})} {\mathbf{J}(\mathbf{{q}})}\right)
+    {\bfgreek{\xi}}
+\end{equation}
 
-However, doesn't avoid singularities.
+$\bfgreek{\xi} \in \mathbb{R}^{n \times 1}$ is the free variable that lets us choose between different $\mathbf{\dot{q}}$ to obtain the same end effector velocity $\mathbf{\dot{x}_{d}}$. This is possible because $\left({\mathbf{I}} - {\mathbf{J}^{+}(\mathbf{{q}})} {\mathbf{J}(\mathbf{{q}})}\right)$ is the null space projection matrix of $\mathbf{J}(\mathbf{{q}})$, meaning that it projects any vector into its null space. This implies that it doesn't change the final desired velocity.
 
-% TODO: Numerical instability
-\textbf{NUMERIC INSTABILITY SINGULARITIES OF PSEUDOINVERSE}. Probably dividing something by zero.
+This solution give us all the posible solutions for the least squares problem, which aims to minimize $\|\mathbf{\dot{x}_{d}} - \mathbf{J}(\mathbf{q}) \mathbf{\dot{q}}\|$. More specifically, if $\bfgreek{\xi} = \mathbf{0}$,
+$\mathbf{\dot{q}} ={\mathbf{J}^{+}(\mathbf{{q}})}{\mathbf{\dot{x}_{d}}}$
+is the minimum norm solution to the least squares problem.
 
-The reader may think that it would be useful to have a measure of when one of this situations is about to take place. \cite{yoshikawa1985dynamic} introduced a measure that indicates how close a robot is from a singularity:
+However, there are some problems with this solution. As mentioned before, $\mathbf{J}(\mathbf{{q}})$ not being full rank implies the control over one of the motion axes is lost. This happens at certain joint configurations $\mathbf{{q}}$ called singularities. Not only is reaching one of these configurations a problem, but near to singularity configurations are also problematic. This is true because even though a solution is possible, at these near to singularity configurations excessive joint space velocities are required to move the end effector in the axis that is close from being uncontrolable.
 
-$$\sqrt{\mathbf{J^{\intercal}} \cdot \mathbf{J}}$$
+The reader may think that it would be useful to have a measure of when one of how close the configuration of the robot is from a singularity. One possible solution is the one introduced by \cite{yoshikawa1985dynamic}:
 
-This value tends to $0$ when the vector $q$ tends to a position in which the rank of $\mathbf{J}$ will be decreased.
+$$\sqrt{\operatorname{det}(\mathbf{J^{\intercal}} \cdot \mathbf{J})}$$
 
-\textbf{GENERAL SOLUTION OF THE EQUATION}
+This measure indicates how close a robot is from a singularity. It is the equivalent to the determinant of a square matrix. When it approaches 0 it indicates $\mathbf{J}$ is close from loosing a rank.
 
-% TODO: middle range of the joints
-\textbf{Leageouis and middle range of the joints}
+Some method needs to be used to avoid reaching a singularity configuration. Recall that there are infinitely many solutions to the joint velocities that accomplish the desired end effector velocity $\mathbf{\dot{x}_{d}}$, so if the addecuate joint velocities are chosen singularities can be avoided.
+
+\cite{liegeois1977automatic} presented a method that makes use of the Lagrange multipliers to minimize a certain objective function $h(\boldsymbol{q})$. This method says that introducing the following expression in $\bfgreek{\xi}$ in equation \ref{eq:generalsolution} will decrease the value of the chosen objective function:
+
+$$
+\bfgreek{\xi} = - \alpha \, \nabla_{\mathbf{q}} h(\boldsymbol{q})
+$$
+
+where $\alpha$ is a weight that allows to increase or decrease the effect of this second term on the final solution. Small values of $\alpha$ will be unnoticeable, while if the values are too big the value of $h(\boldsymbol{q})$ could even increase, since the gradient is only valid in the surroundings of the configuration at a certain time.
+
+One possible objective function that can avoid singularities is:
+
+$$
+h(\boldsymbol{q})=\frac{1}{2} \sum_{i=1}^{n}\left(\frac{q_{i}-q_{i, \operatorname{mid}}}{q_{i, \max }-q_{i, \min }}\right)^{2}
+$$
+
+This function approaches $0$ as the joints are close to their mid range value. The reason why this is a valid approach is that singularities usually appear when joints are close their limits.
+
 
 
 \subsubsection{End effector Position Control through Inverse Instantaneous Kinematics}
