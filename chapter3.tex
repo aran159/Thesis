@@ -1326,7 +1326,7 @@ Objective function.
 
     \item As mentiond in section \ref{sss:IIK}, problems appear with the jacobian when near singularities. This second term is used to solve this issue using the \textbf{Damped Least Squares} method \cite{nakamura1986inverse} \cite{wampler1986manipulator}.
 
-    The value of $\mu$ is calculated as follows, using the % TODO: ref
+    The value of $\mu$ is calculated as follows, based in the manipulability measure (section \ref{sss:IIK})
     :
 
     \begin{equation*}
@@ -1408,8 +1408,8 @@ Position, velocity and acceleration restrictions can be brought to the velocity 
 \begin{equation}
     \label{eq:jerkylimit}
     \begin{array}{l}
-        \dot{q}_{\min , i}=\max \left\{\frac{q_{\min , i}-q_{i}}{T},-v_{\max , i},-\sqrt{2 a_{\max , i}\left(q_{i}-q_{\min , i}\right)}\right\} \\
-        \dot{q}_{\max , i}=\min \left\{\frac{q_{\max, i}-q_{i}}{T}, v_{\max , i}, \sqrt{2 a_{\max , i}\left(q_{\max , i}-q_{i}\right)}\right\}
+        \dot{q}_{\min , i}=\max \left\{\frac{q_{\min , i}-q_{i}}{T},-\dot{q}_{\max , i},-\sqrt{2 \ddot{q}_{\max , i}\left(q_{i}-q_{\min , i}\right)}\right\} \\
+        \dot{q}_{\max , i}=\min \left\{\frac{q_{\max, i}-q_{i}}{T}, \dot{q}_{\max , i}, \sqrt{2 \ddot{q}_{\max , i}\left(q_{\max , i}-q_{i}\right)}\right\}
     \end{array}
 \end{equation}
 
@@ -1499,15 +1499,7 @@ The value of $\dot{x}_{\mathrm{a}, i}$ then defines the behaviour. In \cite{ding
     \label{fig:firstconstraint}
 \end{figure}
 
-\begin{figure}[htbp]
-    \caption[]{
-    Value of $\dot{x}_{\mathrm{a}, i}$ depending on $ \|\mathbf{d_i}\|$.
-    }
-    \begin{center}
-    \includegraphics[width=120mm]{figs/plotxai.eps}
-    \end{center}
-    \label{fig:plotxai}
-\end{figure}
+
 
 Formally speaking, the restriction for one obstacle is formulated as follows:
 
@@ -1552,7 +1544,7 @@ As what we want is an overall increase of the distance instead of increasing jus
         \nabla_{\mathbf{q}}\|\mathbf{d_m}\|
     \end{bmatrix}
     \dot{\mathbf{q}}
-    \leq 0
+    \geq 0
 \end{equation*}
 
 The weights are set to be indirectly proportional to the distance, so that closest obstacles have highest priority:
