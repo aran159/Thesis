@@ -1,7 +1,7 @@
 \chapter{Technical Approach}
 \label{ch:tec}
 
-In this chapter, we will explain the technical means by which the objective of this thesis has been approached. Firstly, in section \ref{s:pre} we start talking about the basic elements that have been used during the development this work, such us the robot platform employed or software libraries. In order to make the robot avoid obstacles with proximity data, obstacles need to be located with respect to the robots’ kinematic chain. That's why, in section \ref{s:perception} we present the method to sense the environment through proximity sensing. The main section is section \ref{s:control}, where the methods for collision avoidance are explained.
+In this chapter, we will explain the technical means by which the objective of this thesis has been approached. Firstly, in section \ref{s:pre} we start talking about the basic elements that have been used during the development this work, such us the robot platform employed or software libraries. In order to make the robot avoid obstacles with proximity data, obstacles need to be located with respect to the robots’ kinematic chain. That's why, in section \ref{s:perception} we present the method to sense the environment through proximity sensing. Lastly, in section \ref{s:control} where the methods for collision avoidance are explained.
 
 \section{Required resources}
 \label{s:pre}
@@ -165,7 +165,78 @@ The difference between \textit{Gazebo} and \textit{rviz} is that even though bot
     \includegraphics[width=\textwidth]{figs/rviz_intro.png}
 \end{figure}
 
+\subsection{Mathematical Optimization and Quadratic Programming}
+\label{sss:optimizationintro}
 
+\textbf{Mathematical Optimization}, also called \textbf{Mathematical Programming}, is the set of principal methods used to determine the best solutions to mathematically described problems.
+
+Formally speaking, Mathematical Optimization is the process of the formulation and solution of a optimization problem of the general mathematical form:
+
+$$
+\underset{\text { w.r.t. } \mathbf{x}}{\text{minimize}} \, f(\mathbf{x}), \mathbf{x}=\left[x_{1}, x_{2}, \ldots, x_{n}\right]^{T} \in \mathbb{R}^{n}
+$$
+
+subject  to  the  constraints:
+
+% Column vector
+$$
+\begin{array}{ll}
+    g_{j}(\mathbf{x}) \leq 0, & j=1,2, \ldots, m \\
+    h_{j}(\mathbf{x})=0, & j=1,2, \ldots, r
+\end{array}
+$$
+
+$f(\mathbf{x})$, $g_{j}(\mathbf{x})$ and $h_{j}(\mathbf{x})$ are scalar functions of a vectorial variable $\mathbf{x}$. The components $x_i$ of $\mathbf{x}$ are called the \textit{variables of the optimization problem}, $f(\mathbf{x})$ is the \textit{objective function}, $g_{j}(\mathbf{x})$ are the \textit{inequality constraint functions} and $h_{j}(\mathbf{x})$ are the \textit{equality constraint functions}. The optimum vector $\mathbf{x}$ that solves the optimization problem is denoted with an asterisk $\mathbf{x^{*}}$ and the corresponding \textit{optimal objective function value }is $f(\mathbf{x^{*}})$.
+
+Optimization problems are usually solved using \textit{optimization algorithms}. These optimization algorithms are tailored to particular types of optimization problems. This is why classification of optimization models is a crucial part in the optimization problem.
+
+One important optimization problem type is the \textbf{Quadratic Programming} (QP) problem. It is an important class of problem on its own and also a subproblem for more general constrained optimization problems (sequential quadratic programming (SQP), augmented Lagrangian methods). These are the characteristics of QP problems:
+
+\begin{itemize}
+    \item \textbf{One objective function}. The most common case is the problem being defined by a single objective function, but there are also problems that can be modeled with no objective functions or using many of them.
+    \item \textbf{Deterministic optimization}. Depending on the nature of the data, an optimization problem can be either \textit{deterministic} or \textit{stochastic}. Due to measurement errors or more importantly because the data being used is data that represents the future, uncertainty has to be incorpored to the model. In that case we are talking about stochastic optimization. On the other hand, if data is assumed to be known with accuracy we are talking about deterministic optimization.
+    \item \textbf{Continuous optimization problem}. For some problems, the variables of the optimization problem can only take values from a discrete set, often a subset of integers, whereas for other problems they can take any value in $\mathbb{R}$. The former are called \textit{discrete optimization problems} and the latter are called \textit{continuous optimization problems}. Continuous optimization problems tend to be easier to solve because the continuity of the functions involved can be used to obtain information about the neighbourhood of the current value.
+    \item \textbf{Constrained optimization}. Sometimes there problem does not require to specify constraints for the variables of the optimization problem. When this is the case we are talking about \textit{unconstrained optimization}. If the problem requires a certain amount of constraints to be fulfilled it is called \textit{constrained optimization}.
+\end{itemize}
+
+\begin{figure}[H]
+    \caption[Optimization models taxonomy, with an emphasis on deterministic optimization problems.]{
+        Optimization models taxonomy, with an emphasis on deterministic optimization problems.
+    }
+    \centering
+    \includegraphics[width=\textwidth]{figs/optimizationtaxonomy.jpeg}
+\label{fig:optimizationtaxonomy}
+\end{figure}
+
+Moreover, a problem has to meet some more requirements so that it can be written as a QP problem:
+
+\begin{itemize}
+    \item The objective function cannot be any function, it needs to be a quadratic function that can be rewritten as follows:
+    $$
+    f(\mathbf{x}) = \frac{1}{2} \mathbf{x}^{T} \mathbf{Q} \mathbf{x}+\mathbf{c}^{T} \mathbf{x}
+    $$
+    where $\mathbf{Q}$ is a symmetric $n \times n$ matrix and $\mathbf{c} \in \mathbb{R}^{n \times 1}$.
+    \item The constraints must be described by a linear set of equations and inequations:
+    $$
+    \begin{array}{ll}
+        \mathbf{A} \mathbf{x} \leq \mathbf{0}, & \mathbf{A} \in \mathbb{R}^{m \times n} \\
+        \mathbf{A_{eq}} \mathbf{x} = \mathbf{0}, & \mathbf{A_{eq}} \in \mathbb{R}^{r \times n}
+    \end{array}
+    $$
+    \item Depending on the characteristics of the matrix $\mathbf{Q}$ the problem can be easily solved using polynomial-time algorithms. This is only posible if $\mathbf{Q}$ positive definite, that is, if all its eigenvalues are greater than or equal to $0$. When $\mathbf{Q}$ is positive definite, the problem is a \textit{convex QP problem}. In the contrary case, the problem is \textit{non-convex} and only local minimums can be found.
+\end{itemize}
+
+So, the quadratic problem can be formulated as follows:
+
+
+\begin{equation}
+    \label{eq:QP}
+    \begin{array}{lll}
+        \text { minimize } & \frac{1}{2} \mathbf{x}^{T} \mathbf{Q} \mathbf{x}+\mathbf{c}^{T} \mathbf{x} &\\
+        \text { subject to } & \mathbf{A} \mathbf{x} \leq \mathbf{0}, & \mathbf{A} \in \mathbb{R}^{m \times n} \\
+        & \mathbf{A_{eq}} \mathbf{x} = \mathbf{0}, & \mathbf{A_{eq}} \in \mathbb{R}^{r \times n}
+    \end{array}
+\end{equation}
 
 \subsection{Software Libraries}
 
@@ -186,7 +257,7 @@ For more information on the elements mentioned in this section see section \ref{
 
 It supports fixed and dynamicly sized matrices and vectors and all the basic operations and common matrix decompositions. It does all its operations in an efficient, optimized, elegant and reliable fashion.
 
-\subsubsection{Optimization}
+\subsubsection{Mathematical Optimization}
 
 ALGLIB \cite{alglib} is a numerical analysis and data processing library, which includes optimization algorithms among other tools. Its goal is to make high quality numerical code available to industry and academic worlds. The library is offered in a free version and in a commercial paid version, which is highly optimized. The free version, however offers access to the full library and has proved a good enough performance for this work.
 
@@ -577,8 +648,15 @@ and the point will not be added to the message.
 
 The points are packed in a custom created message called \lstinline{ros_robotic_skin::PointArray} , whose only field is an array of \lstinline{geometry_msgs::Point}s. This is done at \SI{50}{\hertz}, or what is the same, every \SI{20}{\milli \second}.
 
-% TODO: Buffer
-Buffer
+Moreover, the points obtained at each of the iterations are saved in a control buffer. This is the portion of the proximity listener that implements this behaviour, where \lstinline{buffer} is a data structure of type \lstinline{std::vector<Eigen::Vector3d>}.
+
+\begin{lstlisting}[caption={Initializer of the ProximityVisualizer class},captionpos=b,label={lst:proximityinitializer}]
+if (buffer.size() == 10)
+{
+    buffer.pop_back();
+}
+buffer.insert(buffer.begin(), final_points);
+\end{lstlisting}
 
 \subsection{Visualization in \textit{rviz}}
 \label{ss:visualization}
@@ -1152,9 +1230,9 @@ This function approaches $0$ as the joints are close to their mid range value. T
 \subsubsection{End effector Position Control through Inverse Instantaneous Kinematics}
 \label{sss:eepositioncontrol}
 
-% TODO: Build last section of intro problem
+In this section we present a simple algorithm that moves the end effector to a desired position in the cartesian space, shown in the function \lstinline[columns=fixed]{moveToPosition} in listing \ref{code:noAvoidance}. The mathematical elements presented in previous sections are an essential part of the code.
 
-\begin{lstlisting}[caption={CartesianPositionController.cpp},captionpos=b]
+\begin{lstlisting}[caption={CartesianPositionController.cpp},captionpos=b, label={code:noAvoidance}]
 void moveToPosition(const Eigen::Vector3d xd)
 {
     Eigen::VectorXd qDot;
@@ -1197,6 +1275,10 @@ Eigen::VectorXd secondaryTaskFunctionGradient(Eigen::VectorXd q)
 }
 \end{lstlisting}
 
+Note that the velocity we command at every control loop is $()\mathbf{x_d} - \mathbf{x})$, that is a vector that points from the current end effector possition to the desired objective point. This means that the trajectory of the end effector will be a straight line that goes from the initial point to the objective point.
+
+This simple method will be used as the base desired velocity for all the avoidance control methods.
+
 \subsection{Collision avoidance algorithm based on potential field methods and joint velocity constraints}
 \label{ss:flacco}
 
@@ -1218,179 +1300,6 @@ The other control points are treated as cartesian constraints that are translate
 \label{sss:flaccobody}
 
 % TODO: flaccobody
-\blindtext
-
-\subsection{Optimization based collision avoidance algorithm}
-\label{ss:optimization}
-
-The approach of the method presented in section \ref{ss:flacco} makes use of a set of analytical mathematical expressions to specify the direction in which the end effector has to move and to apply simple upper and lower boundaries to the joint velocities calculated. In this section we try a different approach that allows to design and solve problems with more complex constraints: \textbf{Mathematical Optimization}.
-
-We start introduction Mathematical Optimization and classifying the different kinds of optimization problems there are, emphasizing \textbf{Quadratic Programming}, since the collision avoidance can be suitably defined in this form. We implement the academic article ``Collision Avoidance with Proximity Servoing for Redundant Serial Robot Manipulators'' \cite{dingcollision}, published by Y. Ding and U. Thomas in May 2020.
-
-\subsubsection{Introduction to Mathematical Optimization and Quadratic Programming}
-\label{sss:optimizationintro}
-
-\textbf{Mathematical Optimization}, also called \textbf{Mathematical Programming}, is the set of principal methods used to determine the best solutions to mathematically described problems.
-
-Formally speaking, Mathematical Optimization is the process of the formulation and solution of a optimization problem of the general mathematical form:
-
-$$
-\underset{\text { w.r.t. } \mathbf{x}}{\text{minimize}} \, f(\mathbf{x}), \mathbf{x}=\left[x_{1}, x_{2}, \ldots, x_{n}\right]^{T} \in \mathbb{R}^{n}
-$$
-
-subject  to  the  constraints:
-
-% Column vector
-$$
-\begin{array}{ll}
-    g_{j}(\mathbf{x}) \leq 0, & j=1,2, \ldots, m \\
-    h_{j}(\mathbf{x})=0, & j=1,2, \ldots, r
-\end{array}
-$$
-
-$f(\mathbf{x})$, $g_{j}(\mathbf{x})$ and $h_{j}(\mathbf{x})$ are scalar functions of a vectorial variable $\mathbf{x}$. The components $x_i$ of $\mathbf{x}$ are called the \textit{variables of the optimization problem}, $f(\mathbf{x})$ is the \textit{objective function}, $g_{j}(\mathbf{x})$ are the \textit{inequality constraint functions} and $h_{j}(\mathbf{x})$ are the \textit{equality constraint functions}. The optimum vector $\mathbf{x}$ that solves the optimization problem is denoted with an asterisk $\mathbf{x^{*}}$ and the corresponding \textit{optimal objective function value }is $f(\mathbf{x^{*}})$.
-
-Optimization problems are usually solved using \textit{optimization algorithms}. These optimization algorithms are tailored to particular types of optimization problems. This is why classification of optimization models is a crucial part in the optimization problem.
-
-One important optimization problem type is the Quadratic Programming (QP) problem. It is an important class of problem on its own and also a subproblem for more general constrained optimization problems (sequential quadratic programming (SQP), augmented Lagrangian methods). These are the characteristics of QP problems:
-
-\begin{itemize}
-    \item \textbf{One objective function}. The most common case is the problem being defined by a single objective function, but there are also problems that can be modeled with no objective functions or using many of them.
-    \item \textbf{Deterministic optimization}. Depending on the nature of the data, an optimization problem can be either \textit{deterministic} or \textit{stochastic}. Due to measurement errors or more importantly because the data being used is data that represents the future, uncertainty has to be incorpored to the model. In that case we are talking about stochastic optimization. On the other hand, if data is assumed to be known with accuracy we are talking about deterministic optimization.
-    \item \textbf{Continuous optimization problem}. For some problems, the variables of the optimization problem can only take values from a discrete set, often a subset of integers, whereas for other problems they can take any value in $\mathbb{R}$. The former are called \textit{discrete optimization problems} and the latter are called \textit{continuous optimization problems}. Continuous optimization problems tend to be easier to solve because the continuity of the functions involved can be used to obtain information about the neighbourhood of the current value.
-    \item \textbf{Constrained optimization}. Sometimes there problem does not require to specify constraints for the variables of the optimization problem. When this is the case we are talking about \textit{unconstrained optimization}. If the problem requires a certain amount of constraints to be fulfilled it is called \textit{constrained optimization}.
-\end{itemize}
-
-\begin{figure}[H]
-    \caption[Optimization models taxonomy, with an emphasis on deterministic optimization problems.]{
-        Optimization models taxonomy, with an emphasis on deterministic optimization problems.
-    }
-    \centering
-    \includegraphics[width=\textwidth]{figs/optimizationtaxonomy.jpeg}
-\label{fig:optimizationtaxonomy}
-\end{figure}
-
-Moreover, a problem has to meet some more requirements so that it can be written as a QP problem:
-
-\begin{itemize}
-    \item The objective function cannot be any function, it needs to be a quadratic function that can be rewritten as follows:
-    $$
-    f(\mathbf{x}) = \frac{1}{2} \mathbf{x}^{T} \mathbf{Q} \mathbf{x}+\mathbf{c}^{T} \mathbf{x}
-    $$
-    where $\mathbf{Q}$ is a symmetric $n \times n$ matrix and $\mathbf{c} \in \mathbb{R}^{n \times 1}$.
-    \item The constraints must be described by a linear set of equations and inequations:
-    $$
-    \begin{array}{ll}
-        \mathbf{A} \mathbf{x} \leq \mathbf{0}, & \mathbf{A} \in \mathbb{R}^{m \times n} \\
-        \mathbf{A_{eq}} \mathbf{x} = \mathbf{0}, & \mathbf{A_{eq}} \in \mathbb{R}^{r \times n}
-    \end{array}
-    $$
-    \item Depending on the characteristics of the matrix $\mathbf{Q}$ the problem can be easily solved using polynomial-time algorithms. This is only posible if $\mathbf{Q}$ positive definite, that is, if all its eigenvalues are greater than or equal to $0$. When $\mathbf{Q}$ is positive definite, the problem is a \textit{convex QP problem}. In the contrary case, the problem is \textit{non-convex} and only local minimums can be found.
-\end{itemize}
-
-So, the quadratic problem can be formulated as follows:
-
-
-\begin{equation}
-    \label{eq:QP}
-    \begin{array}{lll}
-        \text { minimize } & \frac{1}{2} \mathbf{x}^{T} \mathbf{Q} \mathbf{x}+\mathbf{c}^{T} \mathbf{x} &\\
-        \text { subject to } & \mathbf{A} \mathbf{x} \leq \mathbf{0}, & \mathbf{A} \in \mathbb{R}^{m \times n} \\
-        & \mathbf{A_{eq}} \mathbf{x} = \mathbf{0}, & \mathbf{A_{eq}} \in \mathbb{R}^{r \times n}
-    \end{array}
-\end{equation}
-
-\subsubsection{Ding paper implementation}
-\label{sss:ding}
-
-% TODO: Title and Intro of ding section
-Intro to ding.
-
-% TODO: Introduce the objective function
-Objective function.
-
-\begin{equation*}
-    f(\dot{\mathbf{q}}) = \underbrace{\frac{1}{2} \mathbf{(\dot{x}-J\dot{q})^{T} (\dot{x}-J\dot{q})}}_\textbf{1} + \underbrace{\frac{\mu}{2} \mathbf{\dot{q}^{T} \dot{q}}}_\textbf{2}
-\end{equation*}.
-
-\begin{enumerate}
-    \item This is the quadratic error between the robot's target velocity and its actual motion given the optimization variables $\mathbf{\dot{q}}$.
-
-    \begin{equation*}
-            \frac{1}{2}\left(\mathbf{\dot{x}-J\dot{q}}\right)^{\mathrm{T}} \left(\mathbf{\dot{x}-J\dot{q}}\right) = \frac{1}{2}\|\mathbf{\dot{x}-J\dot{q}}\|^{2}
-    \end{equation*}
-
-    Observe above that $\mathbf{\dot{x}}$ represents the desired motion, while $\mathbf{J\dot{q}}$ represents the actual motion determined by the jacobian $\mathbf{J}$ presented in section \ref{sss:FIK}. Therefore, $\mathbf{\dot{x}-J\dot{q}}$ is the difference between the desired and actual motions. Performing the actual matrix math on the first term gives us the scalar on the right in the equation above, which happens to be the square of the norm of the error, hence the quadratic error.
-
-    Note that the solution to the optimization problem $\dot{\mathbf{q}}$ would be the result of doing $\mathbf{\dot{q} = J^{\dagger} \dot{x}}$, as explained in section \ref{sss:IIK} if no further constraints where applied to the optimization problem. That is, $\mathbf{\dot{q}= J^{\dagger}\dot{x}}$ would be the smallest value vector to solve $\mathbf{\dot{x} = J\dot{q}}$ and minimize the term $||\mathbf{\dot{x} - J\dot{q}}||$.
-
-    \item As mentiond in section \ref{sss:IIK}, problems appear with the jacobian when near singularities. This second term is used to solve this issue using the \textbf{Damped Least Squares} method \cite{nakamura1986inverse} \cite{wampler1986manipulator}.
-
-    The value of $\mu$ is calculated as follows, based in the manipulability measure (section \ref{sss:IIK})
-    :
-
-    \begin{equation*}
-        \begin{array}{l}
-            w=\sqrt{\operatorname{det}\left(\mathbf{J} \mathbf{J}^{\top}\right)} \\
-            \mu=\left\{\begin{array}{ll}
-            \mu_{0}\left(1-\frac{w}{w_{0}}\right)^{2}, & w<w_{0} \\
-            0, & w \geq w_{0}
-            \end{array}\right.
-        \end{array}
-    \end{equation*}
-\end{enumerate}
-
-Expansion of the expression to meet the form.
-
-\begin{equation*}
-    \begin{split}
-    % Beginning of the quadratic optimization equation
-    f(\dot{\mathbf{q}}) & = \frac{1}{2} \mathbf{(\dot{x}-J\dot{q})^{\top} (\dot{x}-J\dot{q})} + \frac{\mu}{2} \mathbf{\dot{q}^{\top} \dot{q}}
-    % Intermediate line 1
-    \\ & = \frac{1}{2} \underbrace{ ( \mathbf{\dot{x}^{\top}-(J\dot{q})^{\top}} )}_\mathbf{ (A+B)^{\top} = A^{\top} + B^{\top} }  \mathbf{(\dot{x}-J\dot{q})}  + \frac{\mu}{2} \mathbf{\dot{q}^{\top} \dot{q}}
-    % Intermediate line 2
-    \\ & = \frac{1}{2} \mathbf{[ \dot{x}^{\top} \dot{x} - \underbrace{\mathbf{\dot{x}^{\top} J\dot{q} - (J\dot{q})^{\top} \dot{x}} }_{\substack{\emph{Both equivalent to:} \\ \mathbf{\dot{x} \cdot J\dot{q}} \\ \emph{since for scalar value} \, a \\ a^{\top} = a }} + (J\dot{q})^{\top} (J\dot{q}) ]} + \frac{\mu}{2} \mathbf{\dot{q}^{\top} \dot{q}}
-    % Intermediate line 3
-    \\ & = \frac{1}{2} \mathbf{( \dot{x}^{\top} \dot{x}} - 2 \mathbf{ \dot{x}^{\top} J\dot{q} + \underbrace{\mathbf{\dot{q}^{\top} J^{\top}}}_{\substack{\mathbf{(AB)^{\top}} \\ = \mathbf{B^{\top}A^{\top}} }} J \dot{q} )} + \frac{1}{2} \mathbf{\dot{q}^{\top} \mu I \dot{q}}
-    % Intermediate line 4
-    \\ & = \frac{1}{2} \mathbf{ \dot{x}^{\top} \dot{x} -  \dot{x}^{\top} J\dot{q} } + \frac{1}{2} \mathbf{\dot{q}^{\top} (J^{\top}J + \mu I) \dot{q}}
-    % Final form of the quadratic optimization equation
-    \\ & = \frac{1}{2}\dot{\mathbf{q}}^{\top}\left(\mathbf{J}^{\top} \mathbf{J}+\mu \mathbf{I}\right) \dot{\mathbf{q}}-\dot{\mathbf{x}}^{\top} \mathbf{J} \dot{\mathbf{q}}+\frac{1}{2} \dot{\mathbf{x}}^{\top} \dot{\mathbf{x}}
-    \end{split}
-\end{equation*}
-
-$\frac{1}{2} \dot{\mathbf{x}}^{\top} \dot{\mathbf{x}}$ is a constant w.r.t. the optimization variables in $\mathbf{\dot{q}}$, so even though it will change the inal value of the objective function, it does not affect $\mathbf{\dot{q}^{*}}$. Since the resulting $\mathbf{\dot{q}^{*}}$ is the only important output of the optimization process regarding our application, we can get rid of this term, resulting in the final expression:
-
-\begin{equation*}
-    f(\dot{\mathbf{q}}) = \frac{1}{2}\dot{\mathbf{q}}^{\top}\left(\mathbf{J}^{\top} \mathbf{J}+\mu \mathbf{I}\right) \dot{\mathbf{q}}-\dot{\mathbf{x}}^{\top} \mathbf{J} \dot{\mathbf{q}}
-\end{equation*}
-
-Comparing this expression to \ref{eq:QP}, we have that:
-
-\begin{equation*}
-    \begin{array}{l}
-        \mathbf{Q} = \mathbf{J}^{\top} \mathbf{J}+\mu \mathbf{I} \\
-        \mathbf{c}^{\top} = -\dot{\mathbf{x}}^{\top} \mathbf{J}
-    \end{array}
-\end{equation*}
-
-As stated in section \ref{sss:optimizationintro}, the problem needs to be convex in order to be able to find a global optimal solution in a minimum amount of time. This will only be the case if we can verify $\mathbf{Q}$ will always be semi-positive definite, or what is the same, its eigenvalues will be non-negative.
-
-\begin{theorem}
-    \label{th:transposeeigenvalues}
-    Let $\mathbf{A} \in \mathbb{R}^{m \times n}$. Then, $\mathbf{A} \mathbf{A} ^{\top}$ is a positive semi-definite matrix.
-\end{theorem}
-
-\begin{theorem}
-    \label{th:sumeigenvalues}
-    The sum of any two (semi)positive definite matrices of the same size is (semi)positive definite.
-\end{theorem}
-
-$\mu \mathbf{I}$ is semi-positive definite because it is a diagonal matrix with non-negative coefficients and the eigenvalues of a diagonal matrices are the coefficients themselves. $\mathbf{J}^{\top} \mathbf{J}$ because of theorem \ref{th:transposeeigenvalues}. Then, by theorem \ref{th:sumeigenvalues} we know that $\mathbf{Q}$ is semi-positive definite.
-
-% TODO: Code for main task
-
-As far as the constraints are concerned, there are three types. First one is used for joint positions, velocities and accelerations limiting and the other two are for obstacle avoidance.
 
 To limit joint positions, velocities and accelerations, we assume that the restrictions that limit these can be written as follows:
 $$
@@ -1416,7 +1325,97 @@ Position, velocity and acceleration restrictions can be brought to the velocity 
 
 where $q_{i}$ is the current position of joint $i$ and the is $T$ is the control period.
 
-These restrictions could be rewritten as 4 linear equations to meet the structure in equation \ref{eq:QP}. However, most optimization algorithms can deal with a different kind of constraint for this specific kind of restriction, where only upper and lower boundaries for the optimization variables are required. This type of constraints are named as \textbf{box constraints} and can be expressed as:
+
+
+\subsubsection{Setting up the optimization problem}
+\label{sss:flaccorepulsive}
+
+Although this paper was not originally implemented using optimization, we believe that this  is an easier and more intuitive way of describing the desired end effector velocity and the joint velocity descriptions.
+
+Therefore, the purpose of this section is to define the optimization problem that takes the modified end effector velocity $\mathbf{\dot{x_c}}$ obtained in section \ref{sss:flaccorepulsive} and the restrictions obtained in section \ref{sss:flaccobody} as inputs and outputs the joint velocities $\dot{\mathbf{q}}$.
+
+Firstly, we need to describe the objective function in \ref{eq:QP}. The optimal $\dot{\mathbf{q}}^*$ that minimizes the objective funtion must be one that moves the end effector with the desired velocity $\mathbf{\dot{x_c}}$. This is the proposed form for the objective function (from now on we will denote $\mathbf{\dot{x_c}}$ with simply $\mathbf{\dot{x}}$):
+
+\begin{equation*}
+    f(\dot{\mathbf{q}}) = \underbrace{\frac{1}{2} \mathbf{(\dot{x}-J\dot{q})^{T} (\dot{x}-J\dot{q})}}_\textbf{1} + \underbrace{\frac{\mu}{2} \mathbf{\dot{q}^{T} \dot{q}}}_\textbf{2}
+\end{equation*}.
+
+\begin{enumerate}
+    \item This is the quadratic error between the robot's target velocity and its actual motion given the optimization variables $\mathbf{\dot{q}}$.
+
+    \begin{equation*}
+            \frac{1}{2}\left(\mathbf{\dot{x}-J\dot{q}}\right)^{\mathrm{T}} \left(\mathbf{\dot{x}-J\dot{q}}\right) = \frac{1}{2}\|\mathbf{\dot{x}-J\dot{q}}\|^{2}
+    \end{equation*}
+
+    Observe above that $\mathbf{\dot{x}}$ represents the desired motion, while $\mathbf{J\dot{q}}$ represents the actual motion determined by the jacobian $\mathbf{J}$ presented in section \ref{sss:FIK}. Therefore, $\mathbf{\dot{x}-J\dot{q}}$ is the difference between the desired and actual motions. Performing the actual matrix math on the first term gives us the scalar on the right in the equation above, which happens to be the square of the norm of the error, hence the quadratic error.
+
+    Note that the solution to the optimization problem $\dot{\mathbf{q}}$ would be the result of doing $\mathbf{\dot{q} = J^{\dagger} \dot{x}}$, as explained in section \ref{sss:IIK} if no further constraints where applied to the optimization problem. That is, $\mathbf{\dot{q}= J^{\dagger}\dot{x}}$ would be the smallest value vector to solve $\mathbf{\dot{x} = J\dot{q}}$ and minimize the term $||\mathbf{\dot{x} - J\dot{q}}||$.
+
+    \item As mentioned in section \ref{sss:IIK}, problems appear with the jacobian when near singularities. This second term is used to solve this issue using the \textbf{Damped Least Squares} method \cite{nakamura1986inverse} \cite{wampler1986manipulator}.
+
+    The value of $\mu$ is calculated as follows, based in the manipulability measure (section \ref{sss:IIK})
+    :
+
+    \begin{equation*}
+        \begin{array}{l}
+            w=\sqrt{\operatorname{det}\left(\mathbf{J} \mathbf{J}^{\top}\right)} \\
+            \mu=\left\{\begin{array}{ll}
+            \mu_{0}\left(1-\frac{w}{w_{0}}\right)^{2}, & w<w_{0} \\
+            0, & w \geq w_{0}
+            \end{array}\right.
+        \end{array}
+    \end{equation*}
+\end{enumerate}
+
+This expression needs to be expanded to meet the the quadratic form of the objective function in \ref{eq:QP}.
+
+\begin{equation*}
+    \begin{split}
+    % Beginning of the quadratic optimization equation
+    f(\dot{\mathbf{q}}) & = \frac{1}{2} \mathbf{(\dot{x}-J\dot{q})^{\top} (\dot{x}-J\dot{q})} + \frac{\mu}{2} \mathbf{\dot{q}^{\top} \dot{q}}
+    % Intermediate line 1
+    \\ & = \frac{1}{2} \underbrace{ ( \mathbf{\dot{x}^{\top}-(J\dot{q})^{\top}} )}_\mathbf{ (A+B)^{\top} = A^{\top} + B^{\top} }  \mathbf{(\dot{x}-J\dot{q})}  + \frac{\mu}{2} \mathbf{\dot{q}^{\top} \dot{q}}
+    % Intermediate line 2
+    \\ & = \frac{1}{2} \mathbf{[ \dot{x}^{\top} \dot{x} - \underbrace{\mathbf{\dot{x}^{\top} J\dot{q} - (J\dot{q})^{\top} \dot{x}} }_{\substack{\emph{Both equivalent to:} \\ \mathbf{\dot{x} \cdot J\dot{q}} \\ \emph{since for scalar value} \, a \\ a^{\top} = a }} + (J\dot{q})^{\top} (J\dot{q}) ]} + \frac{\mu}{2} \mathbf{\dot{q}^{\top} \dot{q}}
+    % Intermediate line 3
+    \\ & = \frac{1}{2} \mathbf{( \dot{x}^{\top} \dot{x}} - 2 \mathbf{ \dot{x}^{\top} J\dot{q} + \underbrace{\mathbf{\dot{q}^{\top} J^{\top}}}_{\substack{\mathbf{(AB)^{\top}} \\ = \mathbf{B^{\top}A^{\top}} }} J \dot{q} )} + \frac{1}{2} \mathbf{\dot{q}^{\top} \mu I \dot{q}}
+    % Intermediate line 4
+    \\ & = \frac{1}{2} \mathbf{ \dot{x}^{\top} \dot{x} -  \dot{x}^{\top} J\dot{q} } + \frac{1}{2} \mathbf{\dot{q}^{\top} (J^{\top}J + \mu I) \dot{q}}
+    % Final form of the quadratic optimization equation
+    \\ & = \frac{1}{2}\dot{\mathbf{q}}^{\top}\left(\mathbf{J}^{\top} \mathbf{J}+\mu \mathbf{I}\right) \dot{\mathbf{q}}-\dot{\mathbf{x}}^{\top} \mathbf{J} \dot{\mathbf{q}}+\frac{1}{2} \dot{\mathbf{x}}^{\top} \dot{\mathbf{x}}
+    \end{split}
+\end{equation*}
+
+$\frac{1}{2} \dot{\mathbf{x}}^{\top} \dot{\mathbf{x}}$ is a constant w.r.t. the optimization variables in $\mathbf{\dot{q}}$, so even though it will change the inal value of the objective function, it does not affect $\mathbf{\dot{q}^{*}}$. Since the resulting $\mathbf{\dot{q}^{*}}$ is the only important output of the optimization process regarding our application, we can get rid of this term, resulting in the final expression:
+
+\begin{equation*}
+    f(\dot{\mathbf{q}}) = \frac{1}{2}\dot{\mathbf{q}}^{\top}\left(\mathbf{J}^{\top} \mathbf{J}+\mu \mathbf{I}\right) \dot{\mathbf{q}}-\dot{\mathbf{x}}^{\top} \mathbf{J} \dot{\mathbf{q}}
+\end{equation*}
+
+Comparing this expanded expression to \ref{eq:QP}, we have that:
+
+\begin{equation*}
+    \begin{array}{l}
+        \mathbf{Q} = \mathbf{J}^{\top} \mathbf{J}+\mu \mathbf{I} \\
+        \mathbf{c}^{\top} = -\dot{\mathbf{x}}^{\top} \mathbf{J}
+    \end{array}
+\end{equation*}
+
+As stated in section \ref{sss:optimizationintro}, the problem needs to be convex in order to be able to find a global optimal solution in a minimum amount of time. This will only be the case if we can verify $\mathbf{Q}$ will always be semi-positive definite, or what is the same, its eigenvalues will be non-negative.
+
+\begin{theorem}
+    \label{th:transposeeigenvalues}
+    Let $\mathbf{A} \in \mathbb{R}^{m \times n}$. Then, $\mathbf{A} \mathbf{A} ^{\top}$ is a positive semi-definite matrix.
+\end{theorem}
+
+\begin{theorem}
+    \label{th:sumeigenvalues}
+    The sum of any two (semi)positive definite matrices of the same size is (semi)positive definite.
+\end{theorem}
+
+$\mu \mathbf{I}$ is semi-positive definite because it is a diagonal matrix with non-negative coefficients and the eigenvalues of a diagonal matrices are the coefficients themselves. $\mathbf{J}^{\top} \mathbf{J}$ because of theorem \ref{th:transposeeigenvalues}. Then, by theorem \ref{th:sumeigenvalues} we know that $\mathbf{Q}$ is semi-positive definite.
+
+On the other hand, the restrictions presented in section \ref{sss:flaccobody} could be rewritten as 4 linear equations to meet the structure in equation \ref{eq:QP}. However, Quadratic Programming optimization algorithms can deal more efficiently with a different kind of constraint for this specific kind of restrictions, where only upper and lower boundaries for the optimization variables are required. This type of constraints are called \textbf{box constraints} and can be expressed as:
 
 $$
 \mathbf{\dot{q}_{\min}} \leq \mathbf{\dot{q}} \leq \mathbf{\dot{q}_{\max}}
@@ -1424,9 +1423,20 @@ $$
 
 where the components of $\mathbf{\dot{q}_{\min}}$ and $\mathbf{\dot{q}_{\max}}$ are calculated with the expression \ref{eq:jerkylimit}.
 
-Before we continue with the last two types of constraints, an important change with respect to the previously presented method in section \ref{ss:flacco} has to be explained. There, a set of control points where predefined in order to represent the whole kinematic chain of the robot. This was done covering the body with spheres centered in those control points. In this section, in contrast, control points are not predefined. For each sensed point representing an obstacle, the closest point in the kinematic chain of the robot is assigned to it.
+Once the end effector velocity is set up in the objective funtion and the restrictions are applied, the resolution of the Quadratic Programming problem presented in \ref{eq:QP} returns the best joint velocities that solve all the specifications presented in this section.
 
-In order to accomplish the dynamic assignation of control points, the method presented in \cite{stackexchangeSegment} has been implemented. These are the steps followed to find the closest point in the robot kinematic chain to a given point in space:
+
+\subsection{Alternative approach to collision avoidance based on linear inequalities}
+\label{ss:optimization}
+
+In this section we implement the academic article ``Collision Avoidance with Proximity Servoing for Redundant Serial Robot Manipulators'' \cite{dingcollision}, published by Y. Ding and U. Thomas in May 2020. In their approach box constraints are reserved to the task of maintaining the limits in joint positions, velocities and accelerations. The hierarchy between the algorithms applied to the end effector and the rest of the body is not used any more. Control points are calculated dynamicaly (section \ref{sss:dynamicpoints}). The commanded velocity is not modified by a repulsive vector. Instead, each obstacle point defines a restriction on the movement of the closest point in the kinematic chain (section \ref{sss:firstrestriction}). An extra restriction makes the overall distance to the obstacles increase over time (section \ref{sss:secondrestriction}).
+
+\subsubsection{Assigning a control point in the kinematic chain of the robot to each of the obstacles}
+\label{sss:dynamicpoints}
+
+In this section control points are not predefined as in section \ref{ss:flacco}. All the obstacle points are dynamicaly assigned a point in the robot's kinematic chain instead. The point is chosen to be the one closest to the obstacle.
+
+The method implemented to obtain the closest point is presented in \cite{stackexchangeSegment}. These are the steps proposed:
 
 \begin{enumerate}
     \item Let the robot be represented by a series of segments defined by pairs of points. Let $P$ be the obstacle point to which we want to assign the closest point in the robot.
@@ -1475,21 +1485,18 @@ In order to accomplish the dynamic assignation of control points, the method pre
         t = -\frac{v \cdot u}{v \cdot v}.
         $$
 
-        \item Once the value of $t$ is computed, if it is between $0$ and $1$, then the closest point is $(1-t)A + t B$. If it is not, $\min\{g(0),g(1)\}$ is the answer.
+        \item Once the value of $t$ is computed, if it is between $0$ and $1$, then the closest point is $(1-t)A + t B$. If it is not, $A$ or $B$ are the closest points, depending on which $f(0)$ or $f(1)$ is the smaller.
     \end{enumerate}
 
     \item From the list of points associated to each of the segments, choose the one corresponding to the minimum distance.
 \end{enumerate}
 
-The first kind of constraint for obstacle avoidance will restrict the robot's approach velocity towards the obstacle, as shown in figure \ref{fig:firstconstraint}.
+\subsubsection{Limiting the approach velocity to the obstacles}
+\label{sss:firstrestriction}
 
-Given a position of an obstacle $h_i$, the orthogonal projection of the final velocity $\dot{\mathbf{x}}_{\mathrm{c}, i}$ of point $c_i$ will be limited by a certain amount $\dot{x}_{\mathrm{a}, i}$. Every $\dot{\mathbf{x}}_{\mathrm{c}, i}$ within the green area will be permitted.
+The expression described in this section will restrict the approach velocity of the point assigned in section \ref{sss:dynamicpoints} towards the obstacle. The restriction is described graphically in figure \ref{fig:firstconstraint}.
 
-Moreover, if the value of $\dot{x}_{\mathrm{a}, i}$ is negative, then the red boundary between the green and red areas will be moved to the opposite site of $\hat{\mathbf{d}_i}$, forcing a repulsive action.
-
-The value of $\dot{x}_{\mathrm{a}, i}$ then defines the behaviour. In \cite{dingcollision} they propose a piecewise defined function to calculate the value, based on the distance at which the obstacle is located with respect to the robotic arm, shown in figure \ref{fig:plotxai}.
-
-\begin{figure}[htbp]
+\begin{figure}[H]
     \caption[]{
         Restriction of the approach velocity of a point towards the obstacle.
     }
@@ -1498,6 +1505,24 @@ The value of $\dot{x}_{\mathrm{a}, i}$ then defines the behaviour. In \cite{ding
     \end{center}
     \label{fig:firstconstraint}
 \end{figure}
+
+Given a position of an obstacle $h_i$, the orthogonal projection of the final velocity $\dot{\mathbf{x}}_{\mathrm{c}, i}$ will be limited by a certain amount $\dot{x}_{\mathrm{a}, i}$. Every $\dot{\mathbf{x}}_{\mathrm{c}, i}$ whose arrowhead is within the green area will be permitted.
+
+Moreover, if the value of $\dot{x}_{\mathrm{a}, i}$ is negative, then the red boundary between the green and red areas will be moved to the opposite site of $\hat{\mathbf{d}_i}$, forcing a repulsive action.
+
+Consequently, the value of $\dot{x}_{\mathrm{a}, i}$ defines how the behaviour of a given point is restricted. In \cite{dingcollision} they propose a piecewise defined function to calculate the value, based on the distance at which the obstacle is located with respect to the robotic arm, shown in figure \ref{fig:plotxai}.
+
+\begin{figure}[H]
+    \caption[]{
+        Determination of $\dot{x}_{\mathrm{a}, i}$ as a function of $\|\mathbf{d_i}\|$.
+    }
+    \begin{center}
+    \includegraphics[width=120mm]{figs/plotxai.eps}
+    \end{center}
+    \label{fig:plotxai}
+\end{figure}
+
+
 
 
 
@@ -1515,9 +1540,16 @@ is the coefficients vector,
 $\dot{\mathbf{q}} \in \mathbb{R}^{n \times 1}$
 are the unknowns and
 $\dot{x}_{\mathrm{a}, i} \in \mathbb{R}$
-is the right side of the inequation. As one obstacle defines one new restriction, for $m$ obstacle points, $m$ rows will be added to elements $\mathbf{A}$ and $\mathbf{b}$ in the QP problem definition in \ref{eq:QP}.
+is the right side of the inequation. As one obstacle defines one new restriction, for $m$ obstacle points, $m$ rows will be added to elements $\mathbf{A}$ and $\mathbf{b}$ in the Quadratic Programming problem definition in \ref{eq:QP}.
 
-As for the second type of constraint, an overall increase in the distance of the points in the robot kinematic chain to the obstacles will be pursued. In terms of mathematical analysis, a continuous function is increasing in time when its derivative with respect to time is positive. By the chain rule, this is how the derivative of a single distance norm with respect to time would be calculated:
+It has to be noted that the restrictions for several points can be contradictory sometimes. This turns the optimization unfeasible. When this happens, the repulsive actions are set to $0$ and the optimization is run again.
+
+\subsubsection{Increasing the overall distance to the obstacles over time}
+\label{sss:secondrestriction}
+
+In this section a new restriction is described, which forces an overall increase over time of the distance between the obstacles and the robot. This restriction complements the one presented in section \ref{sss:firstrestriction}.
+
+In terms of mathematical analysis, a continuous function is increasing in time when its derivative with respect to time is positive. By the chain rule, this is how the derivative of a single distance norm with respect to time would be calculated:
 
 \begin{equation*}
     \frac{ d \|\mathbf{d_i}\|}{dt} =
@@ -1550,11 +1582,7 @@ As what we want is an overall increase of the distance instead of increasing jus
 The weights are set to be indirectly proportional to the distance, so that closest obstacles have highest priority:
 
 \begin{equation*}
-    w_i = \frac{\frac{1}{\|\mathbf{d_i}\|}}{\sum_{j=1}^{m} \frac{1}{\|\mathbf{d_j}\|}}
+    w_i = \frac{1}{\|\mathbf{d_i}\|}
 \end{equation*}
 
-This last type of constraint adds a new row to $\mathbf{A}$ and $\mathbf{b}$.
-
-% TODO: Code for constraints
-
-% TODO: Algorithm set up in ALGLIB
+This constraint adds a new last row to $\mathbf{A}$ and $\mathbf{b}$.
