@@ -25,8 +25,6 @@ The Franka Emika Panda (FEP) is equipped with 7 revolute joints, i.e. it has 7 d
 \label{fig:FEPchain}
 \end{figure}
 
-
-
 It has a control interface that provides access to joint positions $\bf{q}$ and velocities $\dot{\bf{q}}$ and link side torques vector $\bf{\tau}$, with a refresh rate of \SI{1}{\kilo\hertz}. The control interface also provides numerical values of the inertia matrix \(\bar{\bf{M}}(\bf{q})\), the gravity vector \( \bar{\bf{g}}(\bf{q}) \), the end effector Jacobian matrix \( \bar{\bf{J}}(\bf{q}) \) and the Coriolis term \( \overline{\bf{c}}(\bf{q}, \dot{\bf{q}}) \).
 
 There are 3 control modes available. At the lowest level, there is the torque-mode $\bf{\tau_d}$. The joint velocity $\dot{\bf{q_d}}$ and joint position $\bf{q_d}$ modes provide a higher level control and are the ones that are going to be used throughout this work.
@@ -1282,48 +1280,159 @@ This simple method will be used as the base desired velocity for all the avoidan
 \subsection{Collision avoidance algorithm based on potential field methods and joint velocity constraints}
 \label{ss:flacco}
 
-The method presented in this section is an adaptation of the academic article ``A Depth Space Approach to Human-Robot Collision Avoidance'' \cite{flacco2012depth}, published by F. Flacco et al. in 2012. The paper presents an avoidance algorithm that takes depth images as inputs. In this work we have implemented the same functionality leveraging the perception via proximity sensing presented in section \ref{s:perception} instead.
+The method presented in this section is an adaptation of the academic article ``A Depth Space Approach to Human-Robot Collision Avoidance'' \cite{flacco2012depth}, published by F. Flacco et al. in 2012. The paper presents an avoidance algorithm that takes depth images as inputs. In this work we have implemented the same functionality leveraging the perception via proximity sensing presented in section \ref{s:perception} instead. Moreover, the resolution of the equations is done via optimization, whereas in the original work it was done using a more complex algorithmic approach that leveraged inverse instantaneous kinematics explained in \ref{sss:IIK}.
 
-The objective of the control algorithm is to maintain a main task as long as collision can be avoided. For that purpose, a disctintion is made between a discrete set of points in the robot kinematic chain that are taken to avoid the collision of any part of the robot with an object in its surroundings. On the one hand, there is the end effector point. This point is given a special attention due to the fact that the main task of a robot is usually focused on employing its end effector to accomplish a specific goal controlling its motion. On the other hand, there are a set of points along the robot, which are selected to represent the whole body of the robot and are treated differently.
+The main task of robot control usually deals with the motion of the end effector. The objective of the collision avoidance control algorithm is to maintain the original main task as long as collision can be avoided.
 
-The end effector algorithm is based on a \textbf{potential field} approach, where two kinds of virtual fields are generated to accomplish the goal of completing a main task while avoiding collision. Attractive fields contribute to movement towards the goal, while repulsive fields avoid getting closer to a possible collision. This algorithm is further explained in section  \ref{sss:flaccorepulsive}.
+In consequence, a disctintion is made between a discrete set of points in the body of the robot and the end effector. The points in the \textbf{body} are taken to avoid the collision of any part of the robot with an object in its surroundings. On the one hand, the \textbf{end effector} is given special attention due to its aforementioned importance.
 
-The other control points are treated as cartesian constraints that are translated into \textbf{joint velocity constraints} that are satisfied using the task redundancy of the robot. The authors state that if the had considered the same approach for them, they would have had to prioritize the tasks of some points over the rest so that the problem turned feasible. However, doing this is problematic in their own words: giving priority to the end effector the collision safety of the points in the body would not be guaranteed, whereas not prioritizing it would result in random end effector trajectories that would not accomplish the task. This is addressed in section \ref{sss:flaccobody}.
+The end effector algorithm is based on a \textbf{potential field} approach, where artificially generated repulsive fields avoid getting closer to a possible collision. This algorithm is explained in detail in section  \ref{sss:flaccorepulsive}.
 
-\subsubsection{Potential field methods and velocity estimation applied to the effector}
+The body control points are treated as cartesian constraints that are translated into \textbf{joint velocity constraints}. This constraints can be satisfied thanks to task redundancy, that is, there are different joint velocities that move the end effector at the same velocity. The authors state that if they had considered the same approach as for the end effector, they would have had to prioritize some points over the rest so that the problem turned feasible. However, doing this is problematic in their own words: giving priority to the end effector the collision safety of the points in the body would not be guaranteed, whereas not prioritizing it would result in random end effector trajectories that would not accomplish the task. The obtainment of these joint velocity constraints is addressed in section \ref{sss:flaccobody}.
+
+\subsubsection{Potential field method approach applied to the effector obstacle avoidance}
 \label{sss:flaccorepulsive}
 
-% TODO: flaccorepulsive
-\blindtext
+Let $\mathbf{\dot{x}_d}$ be the desired velocity for the end effector. This velocity can be coming from different sources, but one example is the velocity that points to the next point in a cartesian position control\ref{sss:eepositioncontrol}. The location of the end effector is described by the position vector relative to the base frame $\mathbf{x_{ee}}$. In addition, the robot is surrounded by a set of $m$ obstacles, represented by their position vectors relative to the base frame of the robot $\mathbf{h_i}$, for $i=1,2, \ldots, m$.
+
+The algorithm presented in this section will adapt this velocity to be reactive to obstacles, thanks to the generation of an artificial repulsive vector $\mathbf{\dot{x}_{rep}}$. This repulsive vector will be used to generate the final control velocity $\mathbf{\dot{x}_c}$:
+
+$$
+\mathbf{\dot{x}_c} = \mathbf{\dot{x}_d} - \mathbf{\dot{x}_{rep}}
+$$
+
+In order to obtain $\mathbf{\dot{x}_{rep}}$, firstly the distance vectors for all the obstacles are calculated:
+
+$$
+\mathbf{d_i} = \mathbf{h_i} - \mathbf{x_{ee}}
+$$
+
+Among all these vectors, the smallest one is selected. This vector is denoted with $\mathbf{d_{min}}$ and it is the only factor that affects direction and norm of $\mathbf{\dot{x}_{rep}}$.
+
+
+
+\begin{equation}
+    \label{eq:repvector}
+    \mathbf{\dot{x}_{rep}} =
+    V
+    \cdot
+    \frac{1}{1 + e^{\alpha (2 \frac{\|\mathbf{d_{min}}\|}{D} - 1)}}
+    \cdot
+    \frac{\mathbf{d_{min}}}{\|\mathbf{d_{min}}\|}
+\end{equation}
+
+The direction of the vector is exactly the same as that of $\mathbf{d_{min}}$. The parameters that affect the shape of the curve that describes the norm of the repulsive vector are $V$, $D$ and $\alpha$.
+
+\begin{itemize}
+    \item $V$ is the maximum value the norm of the repulsive vector can take, since $\frac{1}{1 + e^{\alpha (2 \frac{\|\mathbf{d_{min}}\|}{D} - 1)}}$ is bounded between $0$ and $1$.
+    \item $D$ is the minimum distance at which the norm of the repulsive vectors starts increasing. For distances greater than $D$ the norm is 0.
+    \item $\alpha$ defines the form of the curve. As $\alpha$ tends to $\infty$, the shape of the curve tends to that of of a step function.
+\end{itemize}
+
+\href{https://www.desmos.com/calculator/9f1iszpe5j}{This interactive graph} allows fine tuning the parameters.
+
+
+
+
+
+
 
 \subsubsection{Joint velocity constraints to avoid collision of any point in the robot}
 \label{sss:flaccobody}
 
-% TODO: flaccobody
+The robot body must also avoid obstacles. For that purpose, each of the control points that describe the robot body will provide a set of joint velocity limits.
 
-To limit joint positions, velocities and accelerations, we assume that the restrictions that limit these can be written as follows:
+Let one of those control points be described by its position vector with respect to the base frame $\mathbf{c_{j}}$. The set of obstacles is the same as in the previous section.
+
+The procedure to obtain the joint velocity limits for a given control point $\mathbf{c_{j}}$ starts in the same way as in the end effector, that is, finding the closest obstacle to $\mathbf{c_{j}}$ and obtaining the correspoinding distance vector $\mathbf{d_{min}}$.
+
+Then $f$ is calculated. This expression is identical to part of equation \ref{eq:repvector}.
+
+$$
+f = \frac{1}{1 + e^{\alpha (2 \frac{\|\mathbf{d_{min}}\|}{D} - 1)}}
+$$
+
+This value is bounded between $0$ and $1$ and is close to 1 when the probability of hitting an object is high. The shape of the curve that defines $f$ is exactly the same as  that of the curve from the previous section.
+
+Then, vector $\mathbf{s}$ is calculated:
+
+$$
+\mathbf{s} = \mathbf{J_{c_i}}^{+} \frac{\mathbf{d_{min}}}{\|\mathbf{d_{min}}\|} f
+$$
+
+$\mathbf{J_{c_i}}$ is the partial jacobian of the kinematic chain that goes from the base to $\mathbf{c_{j}}$. Not all the joints necesarily influence the movement of that control point. For instance, if the control point is located in link 2 (see Denavit-Hartenberg notation in \ref{sss:geomrep} for more information on link numbering) only joints $1$ and $2$ affect the movement of that point. Therefore, the size of $\mathbf{J_{c_i}}$ and, in consequence, of $\mathbf{s}$ depend on the location of the specific control point we are talking about.
+
+The $i$th value of $\mathbf{s} \in \mathbb{R}^{n \times 1}$ represents the influence the movement of that specific joint $i$ has in moving $\mathbf{c_{j}}$ as indicated by the vector $\frac{\mathbf{d_{min}}}{\|\mathbf{d_{min}}\|}$. The sign of $s_i$ represents the direction of rotation of that joint that leads to that movement. If $s_i > 0$, moving that joint counterclockwise would contribute to a collision. On the other hand, if $s_i < 0$ hte clockwise rotation of the joint is the one that has to be limited.
+
+The amount by which joint velocities are limited depends on the value of $f$ and the physical limits of the robot (joint velocity limits impose that $-\mathbf{\dot{q}_{\max}} \leq \mathbf{\dot{q}} \leq \mathbf{\dot{q}_{\max}}$, see \ref{ss:panda}):
+
+
+\begin{equation*}
+    \begin{array}{ll}
+        \text { if } s_{i} \geq 0, & {\dot{q}_{\max, body , i}}^{\, j}=\dot{q}_{\max, i}\left.\left(1-f\right)\right. \\
+        \text { else } & \dot{q}_{\min, body , i}^{\, j}=-\dot{q}_{\max, i}\left.\left(1-f\right)\right.
+    \end{array}
+\end{equation*}
+
+Once $\mathbf{\dot{q}_{\min, body}^{\, j}}$ and $\mathbf{\dot{q}_{\max, body}^{\, j}}$ have been obtained for all control points, the final restrictions $\mathbf{\dot{q}_{\min, body}}$ and $\mathbf{\dot{q}_{\max, body}}$ need to be set as the the most restrictive.
+
+\begin{equation*}
+    \begin{array}{l}
+        \dot{q}_{\min, body , i} = \max \{\dot{q}_{\min, body , i}^{\, j}\} \\
+        \dot{q}_{\max, body , i} = \min \{\dot{q}_{\max, body , i}^{\, j}\}
+    \end{array}
+\end{equation*}
+
+\subsubsection{Imposing joint position, velocity and acceleration limits}
+\label{sss:flaccobody}
+
+The aforementioned approach doesn't take into account the physical limitations of the robot. Positions of the joints are limited, as mentioned in section \ref{ss:panda}. In addition, repulsive vectors can sometimes provoke unpredictable sudden changes in the motion of the robot. This can be avoided limiting the accelerations of the joints. The previous section has explained how joint velocity limitations can be used to avoid obstacles.
+
+To limit joint positions, and accelerations, we assume that the restrictions that these can be written as follows:
+
 $$
 \begin{aligned}
     \mathbf{q_{\min}} & \leq \mathbf{q} \leq \mathbf{q_{\max}} \\
-    -\mathbf{\dot{q}_{\max}} & \leq \mathbf{\dot{q}} \leq \mathbf{\dot{q}_{\max}} \\
     -\mathbf{\ddot{q}_{\max}} & \leq \mathbf{\ddot{q}} \leq \mathbf{\ddot{q}_{\max}}
 \end{aligned}
 $$
 
-Written in this form, the joint ranges are not necessarily symmetric, while joint velocities and accelerations are. Refer to table \ref{t:jointlimits} to see the actual values of $\mathbf{q_{\min}}$, $\mathbf{q_{\max}}$, $\mathbf{v_{\max}}$ and $\mathbf{a_{\max}}$ for Franka Panda Emika.
-
-Position, velocity and acceleration restrictions can be brought to the velocity level $\dot{\mathbf{q}}$, thus to limit the optimization variables in which the optimization problem is being defined. In \cite{flacco2012motion}, they present a method to do this. The final formulation for the restrictions is:
+Position and acceleration restrictions can be brought to the velocity level $\dot{\mathbf{q}}$. This is a necessary step since, as presented in the next section,  the whole problem will be defined as a joint velocity optimization problem. In \cite{flacco2012motion}, they present a method to express these limits in the velocity level:
 
 \begin{equation}
     \label{eq:jerkylimit}
-    \begin{array}{l}
-        \dot{q}_{\min , i}=\max \left\{\frac{q_{\min , i}-q_{i}}{T},-\dot{q}_{\max , i},-\sqrt{2 \ddot{q}_{\max , i}\left(q_{i}-q_{\min , i}\right)}\right\} \\
-        \dot{q}_{\max , i}=\min \left\{\frac{q_{\max, i}-q_{i}}{T}, \dot{q}_{\max , i}, \sqrt{2 \ddot{q}_{\max , i}\left(q_{\max , i}-q_{i}\right)}\right\}
+    \begin{array}{ll}
+        \textbf{Position limits} &
+        \frac{q_{\min , i}-q_{i}}{T}
+        \leq
+        \dot{q}_i
+        \leq
+        \frac{q_{\max , i}-q_{i}}{T}
+        \\
+        \textbf{Acceleration limits} &
+        -\sqrt{2 \ddot{q}_{\max , i}\left(q_{i}-q_{\min , i}\right)}
+        \leq
+        \dot{q}_i
+        \leq
+        \sqrt{2 \ddot{q}_{\max , i}\left(q_{\max , i}-q_{i}\right)}
+        \\
     \end{array}
 \end{equation}
 
-
 where $q_{i}$ is the current position of joint $i$ and the is $T$ is the control period.
+
+Finally, the most restrictive values between position, acceleration and the body algorithm restrictions need to be selected.
+
+\begin{equation}
+    \begin{array}{l}
+        \dot{q}_{\min , i}=\max \left\{\frac{q_{\min , i}-q_{i}}{T},
+        \dot{q}_{\min, body , i},
+        -\sqrt{2 \ddot{q}_{\max , i}\left(q_{i}-q_{\min , i}\right)}\right\} \\
+        \dot{q}_{\max , i}=\min \left\{\frac{q_{\max, i}-q_{i}}{T},
+        \dot{q}_{\max, body , i},
+        \sqrt{2 \ddot{q}_{\max , i}\left(q_{\max , i}-q_{i}\right)}\right\}
+    \end{array}
+\end{equation}
 
 
 
@@ -1585,4 +1694,4 @@ The weights are set to be indirectly proportional to the distance, so that close
     w_i = \frac{1}{\|\mathbf{d_i}\|}
 \end{equation*}
 
-This constraint adds a new last row to $\mathbf{A}$ and $\mathbf{b}$.
+This constraint adds one last row to $\mathbf{A}$ and $\mathbf{b}$.
