@@ -1,8 +1,24 @@
 \chapter{Conclusions}
 \label{conclusionschap}
 
-% LAST: Conclusions. First
+Human-Robot Interaction is the field of robotics dedicated to the understanding, design, and evaluation of robotic systems for use by or with humans. Safety is one of the most important aspects this field will have to deal with in the years to come. In this work, pre-contact safety is adressed through the use of a artificial skin that is being developed in the HIRO Lab. To be more specific, the artificial skin integrates a set of proximity sensors and has the potential to cover all the links of any robotic arm.
 
-one short paragraph about each section
+Proximity sensor readings are transformed into 3D data, which will later inform the control algorithms. An important step in this transformation is the kinematic calibration developed by another team in the HIRO Lab.
 
-future work: where we're going.
+The main objective has been to adapt and integrate previous literature to the collision avoidance control through proximity sensors. Two different approaches have been implemented.
+
+On the one hand, ``A Depth Space Approach to Human-Robot Collision Avoidance'' \cite{flacco2012depth}, published by F. Flacco et al. in 2012, makes use of two different methods to solve the problem of avoidance control. A repulsive field method is used to modify the end effector's velocity and . For the rest of the robot's body, a set of control points are used to avoid collisions. Each of the control points generates a set of joint velocity restrictions that ensures the safety for all the points that surround that point.
+
+On the other hand, in ``Collision Avoidance with Proximity Servoing for Redundant Serial Robot Manipulators'' \cite{dingcollision}, published by Y. Ding and U. Thomas in May 2020, the end effector velocity is not modified. The optimization algorithm will try to minimize the quadratic error between the desired task velocity and the the final commanded velocity, but the minimization will be subject to some constraints. These constraints ensure the safety of motion. For the generation of the constraints each obstacle is assigned a control point on the robotic arm. Then, the approach velocity of each of the control points to their respective obstacle is limited. The same formulation can also be used to force a repulsive movement. In addition, one last restriction forces an weighted increase in the overall distance to obstacles.
+
+The implementations of these two controllers form, with the addition of a third controller that improves upon both of them, a framework for the comparison and improvement of the current state of art in safe robot controllers.
+
+As far as future work is concerned, the first thing will be to design an experiment in simulation that allows a better evaluation of the different control methods. The choice of suitable quantitative tools will also be of great importance for this evaluation. This is a list of already implemented and future ideas for improvement:
+
+\begin{itemize}
+    \item Build on the controller shown in section \ref{s:improvements}.
+    \item Improve and test the graph shown in figure \ref{fig:enhancedxai} and compare it against the original piecewise graph (figure \ref{fig:plotxai}).
+    \item Integrate the second term of the general equation and the the gradient that minimizes the distance to the mid-range of the joints in the optimization approach.
+    \item Make use of a human sensor that will be integrated in the skin to avoid show alternative behaviours when obstacles are human beings.
+    \item Account for the thickness of the robotic arm for a more accurate response to distance. Right now, distances are measured from obstacles to the dynamic control points located in the axis of the robotic limbs.
+\end{itemize}
