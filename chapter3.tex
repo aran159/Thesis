@@ -644,7 +644,7 @@ $$
 
 and the point will not be added to the message.
 
-The points are packed in a custom created message called \lstinline{ros_robotic_skin::PointArray} , whose only field is an array of \lstinline{geometry_msgs::Point}s. This is done at \SI{50}{\hertz}, or what is the same, every \SI{20}{\milli \second}.
+The points are packed in a custom created message called \lstinline{ros_robotic_skin::PointArray} , whose only field is an array of \lstinline{geometry_msgs::Point}s. This is done at \SI{100}{\hertz}, or what is the same, every \SI{10}{\milli \second}.
 
 Moreover, the points obtained at each of the iterations are saved in a control buffer. This is the portion of the proximity listener that implements this behaviour, where \lstinline{buffer} is a data structure of type \lstinline{std::vector<Eigen::Vector3d>}.
 
@@ -665,7 +665,7 @@ There are several dysplay types that can be visualized in rviz. We use \lstinlin
 
 We have called the class that implements the visualization \lstinline{ProximityVisualizer}. In the initializer of the class, shown in listing \ref{lst:proximityinitializer}, the node is suscribed  to the data published in the topic \lstinline{live_points} by \lstinline{proximity_listener}. The data received in that topic will be processed in \lstinline{ProximityVisualizer::Callback}. Next, the publication of messages of type \lstinline{MarkerArray} in the topic \lstinline{visualization_marker_array} is set up. The general properties that are kept through all of the \lstinline{Marker}s that will be added to the \lstinline{MarkerArray} are also set up and the rest of the properties are initialized.
 
-Note that these properties alLow to set up the \lstinline{Marker}'s shape, the size, the color, the coordinates in which it will be located, as well as the frame in which those coordinates are written and the orientation. \lstinline[language=python]{namespace} allows organization within the same topic so that \lstinline{Marker}s can be further classified. The \lstinline{id} of the marker is unique and whenever a new marker with the same \lstinline{id} is published, the previous one is deleted. Finally, \lstinline{action} can be \lstinline{ADD}, \lstinline{DELETE} or \lstinline{DELETEALL}.
+Note that these properties allow to set up the \lstinline{Marker}'s shape, the size, the color, the coordinates in which it will be located, as well as the frame in which those coordinates are written and the orientation. \lstinline[language=python]{namespace} allows organization within the same topic so that \lstinline{Marker}s can be further classified. The \lstinline{id} of the marker is unique and whenever a new marker with the same \lstinline{id} is published, the previous one is deleted. Finally, \lstinline{action} can be \lstinline{ADD}, \lstinline{DELETE} or \lstinline{DELETEALL}.
 
 \begin{lstlisting}[caption={Initializer of the ProximityVisualizer class},captionpos=b,label={lst:proximityinitializer}]
 ProximityVisualizer::ProximityVisualizer()
@@ -742,20 +742,6 @@ In order to visualize the \lstinline{MarkerArray}, a subscription to the topic h
     \end{center}
 \label{fig:markerarrayrviz}
 \end{figure}
-
-The points are seen in \textit{rviz} as shown in figure \ref{fig:visualizationpoints}, where a wall in front of the robot is being perceived.
-
-\begin{figure}[H]
-    \caption[Spheres]{
-    Final visualization of the perceived points in \textit{rviz}.
-    }
-    \begin{center}
-    \includegraphics[width=\textwidth]{figs/visualizationpoints.png}
-    \end{center}
-\label{fig:visualizationpoints}
-\end{figure}
-
-
 
 
 
@@ -1384,7 +1370,7 @@ Once $\mathbf{\dot{q}_{\min, body}^{\, j}}$ and $\mathbf{\dot{q}_{\max, body}^{\
 \end{equation*}
 
 \subsubsection{Imposing joint position, velocity and acceleration limits}
-\label{sss:flaccobody}
+\label{sss:kinematiclimits}
 
 The aforementioned approach doesn't take into account the physical limitations of the robot. Positions of the joints are limited, as mentioned in section \ref{ss:panda}. In addition, repulsive vectors can sometimes provoke unpredictable sudden changes in the motion of the robot. This can be avoided limiting the accelerations of the joints. The previous section has explained how joint velocity limitations can be used to avoid obstacles.
 
