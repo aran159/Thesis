@@ -1043,17 +1043,17 @@
 	\clearpage
 	\thispagestyle{empty}
 	\vspace*{\fill}
-	\begin{center}
-		This thesis entitled:\\
-		\th@title\\
-		written by\
-		\th@fwdname\\
-		has been approved for the\
-		\th@deptorg\
-		\th@deptname
-	\end{center}
+	% \begin{center}
+	% 	This thesis entitled:\\
+	% 	\th@title\\
+	% 	written by\
+	% 	\th@fwdname\\
+	% 	has been approved for the\
+	% 	\th@deptorg\
+	% 	\th@deptname
+	% \end{center}
 	\vspace*{2mm}
-	\th@signature{\th@advisortitle\ \th@advisor}
+	% \th@signature{\th@advisortitle\ \th@advisor}
 	%\th@signature{\th@reader}		% REQUIRED.
 	\ifthenelse{\equal{\th@readerThree}{none}}{\relax}
                 {\th@signature{\th@readerThree}} % optional
@@ -1061,16 +1061,16 @@
                 {\th@signature{\th@readerFour}} % optional
 	\ifthenelse{\equal{\th@readerFive}{none}}{\relax}
                 {\th@signature{\th@readerFive}} % optional
-	\th@dateline
+	% \th@dateline
 	\vspace*{\fill}
-	\begin{center}
-		The final copy of this thesis has been examined by
-		the signatories, and we find that both the content
-		and the form meet acceptable presentation standards
-		of scholarly work in the above mentioned discipline.
-	\ifthenelse{\equal{\th@IRBprotocol}{none}}{\relax}
-                {\par\vspace*{7mm}IRB protocol \#{\th@IRBprotocol}}
-	\end{center}
+	% \begin{center}
+	% 	The final copy of this thesis has been examined by
+	% 	the signatories, and we find that both the content
+	% 	and the form meet acceptable presentation standards
+	% 	of scholarly work in the above mentioned discipline.
+	% \ifthenelse{\equal{\th@IRBprotocol}{none}}{\relax}
+    %             {\par\vspace*{7mm}IRB protocol \#{\th@IRBprotocol}}
+	% \end{center}
 	\vspace*{\fill}
 }
 \newcommand{\th@Abstractpage}{
