@@ -31,7 +31,7 @@ The buffer size in the demonstration is 10. At \SI{100}{\hertz}, this buffer siz
 \section{End effector position control using the general solution of Instantaneous Forward Kinematics}
 \label{s:resultsposition}
 
-Cartesian position control, whose final code has been shown in section \ref{sss:eepositioncontrol} was a necessary step to implement the rest of the avoidance algorithms. We have used many elements implemented in this controller as a foundation and to inform the movement of all subsequent controllers.
+Cartesian position control, final code has been shown in section \ref{sss:eepositioncontrol}, was a necessary step to implement the rest of the avoidance algorithms. We have used many elements implemented in this controller as a foundation and to inform the movement of all subsequent controllers.
 
 \href{https://www.youtube.com/watch?v=o4eRN95Fb8s&list=PLnhdDYfKdsgimnQTQO-bmtKj-KRdbvGgS&index=3&t=0s}{This video} presents the control in action. The desired trajectory is composed of 4 points that pertain to a circunference in the $x = \SI{0.5}{\metre}$ plane. This video presents the experiment that will be conducted for a first evaluation of the avoidance algorithm. The red point represents an obstacle and obviously it is not avoided in the case of this simple controller.
 
@@ -67,7 +67,7 @@ The methods demonstrated in the next sections will improve this limitation impos
 
 \section{Alternative approach to collision avoidance based on linear inequalities}
 
-The approach explained in section \ref{ss:optimization} different in two main ways with respect to Flacco. Control points where dynamically calculated for every obstacle point. The original desired end effector velocity was maintained as long as possible, as opposed to using repulsive vectors.
+The approach explained in section \ref{ss:optimization} is different in two main ways with respect to Flacco. Control points where dynamically calculated for every obstacle point. The original desired end effector velocity was maintained as long as possible, as opposed to using repulsive vectors.
 
 \href{https://www.youtube.com/watch?v=eJjqcIr-7Qw&list=PLnhdDYfKdsgimnQTQO-bmtKj-KRdbvGgS&index=7&t=0s}{In this video} the behaviour of the controller is shown. The first time the robot arm approaches the obstacle the avoidance is satisfactory. The second time something different happens. The movement torwards the next trajectory point is not allowed by the restrictions. The reason why this takes place is obvious if we analyze the second restriction (section \ref{sss:secondrestriction}). As we explained there, an overall increase in the distance to the obstacles is pursued by that restriction. In this case, as there is one single obstacle, it is the distance to that obstacle that is forced to increase. That is why the robot arm is not allowed to advance in the trajectory, there is no way to do so while satisfying the restriction.
 

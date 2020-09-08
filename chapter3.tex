@@ -1,16 +1,16 @@
 \chapter{Technical Approach}
 \label{ch:tec}
 
-In this chapter, we will explain the technical means by which the objective of this thesis has been approached. Firstly, in section \ref{s:pre} we start talking about the basic elements that have been used during the development this work, such us the robot platform employed or software libraries. In order to make the robot avoid obstacles with proximity data, obstacles need to be located with respect to the robots’ kinematic chain. That's why, in section \ref{s:perception} we present the method to sense the environment through proximity sensing. Lastly, in section \ref{s:control} where the methods for collision avoidance are explained.
+In this chapter, we will explain the technical means by which the objective of this thesis has been approached. Firstly, in section \ref{s:pre} we start talking about the basic elements that have been used during the development this work, such us the robot platform employed and software libraries. In order to make the robot avoid obstacles with proximity data, obstacles need to be located with respect to the robots’ kinematic chain. That's why, in section \ref{s:perception} we present a method to sense the environment through proximity sensing. Lastly, in section \ref{s:control} the methods for collision avoidance are explained.
 
 \section{Required resources}
 \label{s:pre}
-In this section we present the various types of tools that have employed throught the process. We start presenting the robotic platform employed for carrying on the experiments. Then we define what robotic middleware is, why it is useful and we present the specific robotic middleware that have been employed: ROS. We finish this section presenting the several software libraries that have been useful in the implementation of the concepts and ideas that will be presented in the sections that follow.
+In this section we present the various  tools that have employed throughout the process. We start presenting the robotic platform employed for carrying on the experiments. Then we define what robotic middleware is, why it is useful and we present the specific robotic middleware that has been employed: ROS. We finish this section by presenting the several software libraries that have been useful in the implementation of the concepts and ideas that will be elaborated on in the sections that follow.
 
 \subsection{Robot platform}
 \label{ss:panda}
 
-The robot utilized for the development of the ideas presented in this work has been the Panda, manufactured by the company Franka Emika based in Munich, Germany. It is well known for its performance and usability as well as for its affordability, starting at 10,000\$.
+The robot utilized for the development of the ideas presented in this work has been the Panda, manufactured by the company Franka Emika based in Munich, Germany. It is well known for its performance and usability as well as for its affordability, starting at \$10,000.
 
 The Franka Emika Panda (FEP) is equipped with 7 revolute joints, i.e. it has 7 degrees of freedom (DOF). Each of the revolute joints mounts a torque sensor. The total weight of FEP is around \SI{18}{\kilo\gram}. It can handle payloads of up to \SI{3}{\kilo\gram}.
 
@@ -61,7 +61,7 @@ The manufacturer also provides the physical limits of the robot, both in the joi
     \begin{center}
     \begin{tabular}{|l|l|l|l|l|l|l|l|l|}
     \hline
-         & Joint 1 & Joint 2 & Joint 3 & Joint 4 & Joint 5 & Joint 6 & Joint 7 & \\ \hline \hline
+         & Joint 1 & Joint 2 & Joint 3 & Joi1nt 4 & Joint 5 & Joint 6 & Joint 7 & \\ \hline \hline
         \(\bf{q_{max}}\) & +2.8973 & +1.7628 & +2.8973 & -0.0698 & +2.8973 & +3.7525 & +2.8973 & \(\text{rad}\) \\ \hline
         \(\bf{q_{min}}\) & -2.8973 & -1.7628 & -2.8973 & -3.0718 & -2.8973 & -0.0175 & -2.8973 & \(\text{rad}\) \\ \hline
         \(\bf{\dot{q}_{max}}\) & 2.1750 & 2.1750 & 2.1750 & 2.1750 & 2.6100 & 2.6100 & 2.6100 & \(\frac{\text{rad}}{\text{s}}\) \\ \hline
@@ -100,16 +100,16 @@ The Robot Operating System (ROS) is an open source robot middleware, robot frame
 \label{fig:middleware}
 \end{figure}
 
-The main goal of ROS in particular is to provide a framework for easy code reuse in research. This is why ROS is most extended in the academic context. It also provides APIs for Python and C++ and codes written in both languages can be used interchangeably and at the same time.
+The main goal of ROS in particular is to provide a framework for easy code reuse in research. This is why ROS is mostly used in an academic context. It also provides APIs for Python and C++ and code written in both languages can be used interchangeably and at the same time.
 
 ROS’s main concept is its runtime graph: a peer-to-peer network of loosely coupled components or nodes that use the ROS communication infrastructure. ROS implements two main communication types:
 
 \begin{itemize}
-    \item\textbf{Topics.} A publisher node publishes a message to a topic. Another node subscribes to this topic, meaning that every time there is a new message published in the topic this subscriber node will receive it and therefore will we able to utilize and manipulate the data. Several nodes can publish to a given topic, as well as several nodes can also be subscribers of the same topic.
-    \item\textbf{Services.} Sometimes the asynchronous model topics provide is not suitable. When synchronous behavior is desired services are the way to go. Services have two sides: client and service. From the client side calling a service is equivalent to calling a function. However, this function is managed in a different node: the server side.
+    \item\textbf{Topics.} A publisher node publishes a message to a topic. Another node subscribes to this topic, meaning that every time there is a new message published in the topic this subscriber node will receive it and therefore will we able to utilize and manipulate the data. Several nodes can publish to a given topic, and subscribe to topics of the same name.
+    \item\textbf{Services.} Sometimes the asynchronous model topics provided are not suitable for an application. When synchronous behavior is desired services are the way to go. Services have two sides: client and service. From the client side calling a service is equivalent to calling a function. However, this function is managed in a different node: the server side.
 \end{itemize}
 
-In figure \ref{fig:rosgraph} the runtime graph of this work is presented as an example. The real robot is replaced by a simulation. The /gazebo node is calculating the physics of the real robot, as well as sensor readings.  /CartesianPositionController is subscribed to the topic /joint\_states, as it needs this information for control purposes. Sensor data is processed in the /proximity\_listener node and then is published to the topic /live\_points. This topic has two subscribers in these examples. On the one hand, /proximity\_visualizer uses the data published in /live\_points to visualize the sensor data in rviz (the 3D visualization tool provided by ROS to visualize several types of visual data). On the other hand,  /CartesianPositionController uses the data for collision avoidance control, as explained later in this chapter (section \ref{s:control}).
+In figure \ref{fig:rosgraph} the runtime graph of this work is presented as an example. The real robot is replaced by a simulation. The /gazebo node is calculating the physics of the real robot, as well as sensor readings.  /CartesianPositionController is subscribed to the topic /joint\_states, as it needs this information for control purposes. Sensor data is processed in the /proximity\_listener node and then is published to the topic /live\_points. This topic has two subscribers in this example. On the one hand, /proximity\_visualizer uses the data published in /live\_points to visualize the sensor data in rviz (the 3D visualization tool provided by ROS to visualize several types of visual data). On the other hand,  /CartesianPositionController uses the data for collision avoidance control, as explained later in this chapter (section \ref{s:control}).
 
 /robot\_state\_publisher is an example of the benefits of the framework ROS provides for easy code reuse. This node is part of a widely used ROS package that uses the robot’s description (described in a .urdf file) and messages published in /joint\_states to provide transformation matrices between any two joints in the robot’s kinematic chain. It publishes this data in /tf topics.
 
@@ -122,11 +122,11 @@ In figure \ref{fig:rosgraph} the runtime graph of this work is presented as an e
     \label{fig:rosgraph}
 \end{figure}
 
-In addition, bags in ROS enable real data storage coming from sensors in the robot. These allow developers to test their algorithms with real data without having to collect new data every time they need to run their code.
+In addition, bags in ROS enable real data storage coming from sensors on the robot. These allow developers to test their algorithms with real data without having to collect new data every time they need to run their code.
 
-The ROS Master enables nodes to find each other and to communicate. It also holds the parameter server, which provides a central storage location for data that is relevant for several nodes. It serves, broadly speaking, as a place where global variables can be stored and retrieved by nodes. Examples of things that are stored in the parameter server are PID control parameters, the robot’s urdf description and frequencies at which different components living in the graph work.
+The ROS Master node enables nodes to find each other and to communicate. It also holds the parameter server, which provides a central storage location for data that is relevant for several nodes. It serves, broadly speaking, as a place where global variables can be stored and retrieved by nodes. Examples of variables that are stored in the parameter server are PID control parameters, the robot’s urdf description, and frequencies at which different components living in the graph work.
 
-Last, it should be mentioned that despite the fact that ROS is widely used in the academic context, it is lacking the reliability and robustness safety-critical systems in industrial or commercial contexts require. Some of the industrial fields, such as the automotive and the aerospace, have their own standards for the development of safety-critical software. These standards need to be certified for every software component written in any of these fields. ROS was not developed to any of these standards and it actually depends on many libraries that were not developed to these standards. ROS 2, in contrast, is based on components that are safety-certified (DDL communication) that make ROS 2 certifiable. Indeed, Apex.AI is working on Apex.OS: an API compatible to ROS 2 that is being certified ISO 26262 for safe automotive applications \cite{apexOS}.
+Last, it should be mentioned that despite the fact that ROS is widely used in the academic context, it lacks the reliability and robustness of safety-critical systems in industrial or commercial contexts require. Some industrial fields, such as the automotive and aerospace, have their own standards for development of safety-critical software. These standards need to be certified for every software component written in any of these fields. ROS was not developed to any of these standards and it depends on many libraries that were not developed to these standards. ROS 2, in contrast, is based on components that are safety-certified (DDL communication) that make ROS 2 certifiable. Indeed, Apex.AI is working on Apex.OS: an API compatible to ROS 2 that is being certified ISO 26262 for safe automotive applications \cite{apexOS}.
 
 
 \subsection{Simulation and Visualization}
@@ -139,7 +139,7 @@ According to the Cambridge Dictionary, a simulation is a situation in which a pa
     \item Development can be \textbf{slow}.
 \end{itemize}
 
-Robot simulation is a very addecuate solution to address each of these. This work has been prototyped in simulation. This has enabled parallel development of the artificial skin and its electronics on the one side and the control design on the other. The simulation software package employed has been \textit{Gazebo}.
+Robot simulation is an adequate solution to address each of these. This work has been prototyped in simulation. This has enabled parallel development of the artificial skin and its electronics on the one side and the control design on the other. The simulation software package employed is \textit{Gazebo}.
 
 \textit{Gazebo} \cite{gazebo} is a 3D robot simulator. It features dynamics simulation,  advanced 3D graphics, indoor and outdoor environments and simulation of several sensors with noise that make the virtual readings realistic. It is a standalone software package, but offers integration with ROS through the \textit{gazebo\_ros\_pkgs} ROS packages.
 
@@ -151,7 +151,7 @@ Robot simulation is a very addecuate solution to address each of these. This wor
     \includegraphics[width=\textwidth]{figs/gazebo_intro.png}
 \end{figure}
 
-On the other hand, ROS offers a useful vizualization tool called \textit{rviz} \cite{rviz}, short for \textit{ROS Visualization}. Several kinds of data can be visualized in \textit{rviz}, which allow to see what the robot is seeing, thinking and planning. These visualization capabilities make it an extremely useful tool for application debugging.
+On the other hand, ROS offers a useful vizualization tool called \textit{rviz} \cite{rviz}, short for \textit{ROS Visualization}. Several kinds of data can be visualized in \textit{rviz}, which allow the user to see what the robot is seeing, thinking, and planning. These visualization capabilities make it an extremely useful tool for application debugging.
 
 The difference between \textit{Gazebo} and \textit{rviz} is that even though both offer some kind of a graphics visualization, \textit{Gazebo} is mainly focused on simulating the physics whereas \textit{rviz} is mainly useful for visualizing any kind of information concerning the robot's state and its knowledge about the environment. Note that \textit{rviz} has the same role in both real and simulated environments.
 
@@ -168,7 +168,7 @@ The difference between \textit{Gazebo} and \textit{rviz} is that even though bot
 
 \textbf{Mathematical Optimization}, also called \textbf{Mathematical Programming}, is the set of principal methods used to determine the best solutions to mathematically described problems.
 
-Formally speaking, Mathematical Optimization is the process of the formulation and solution of a optimization problem of the general mathematical form:
+Formally speaking, Mathematical Optimization is the process of formulation and solution of a optimization problem of the general mathematical form:
 
 $$
 \underset{\text { w.r.t. } \mathbf{x}}{\text{minimize}} \, f(\mathbf{x}), \mathbf{x}=\left[x_{1}, x_{2}, \ldots, x_{n}\right]^{T} \in \mathbb{R}^{n}
@@ -188,13 +188,13 @@ $f(\mathbf{x})$, $g_{j}(\mathbf{x})$ and $h_{j}(\mathbf{x})$ are scalar function
 
 Optimization problems are usually solved using \textit{optimization algorithms}. These optimization algorithms are tailored to particular types of optimization problems. This is why classification of optimization models is a crucial part in the optimization problem.
 
-One important optimization problem type is the \textbf{Quadratic Programming} (QP) problem. It is an important class of problem on its own and also a subproblem for more general constrained optimization problems (sequential quadratic programming (SQP), augmented Lagrangian methods). These are the characteristics of QP problems:
+One important optimization problem type is the \textbf{Quadratic Programming} (QP) problem. It is an important class of problems on its own and also a subproblem for more general constrained optimization problems (sequential quadratic programming (SQP), augmented Lagrangian methods). These are the characteristics of QP problems:
 
 \begin{itemize}
     \item \textbf{One objective function}. The most common case is the problem being defined by a single objective function, but there are also problems that can be modeled with no objective functions or using many of them.
-    \item \textbf{Deterministic optimization}. Depending on the nature of the data, an optimization problem can be either \textit{deterministic} or \textit{stochastic}. Due to measurement errors or more importantly because the data being used is data that represents the future, uncertainty has to be incorpored to the model. In that case we are talking about stochastic optimization. On the other hand, if data is assumed to be known with accuracy we are talking about deterministic optimization.
+    \item \textbf{Deterministic optimization}. Depending on the nature of the data, an optimization problem can be either \textit{deterministic} or \textit{stochastic}. Due to measurement errors or more importantly because the data being used is data that represents the future, uncertainty has to be incorpored to the model. In this case we are talking about stochastic optimization. On the other hand, if data is assumed to be known with accuracy we are talking about deterministic optimization.
     \item \textbf{Continuous optimization problem}. For some problems, the variables of the optimization problem can only take values from a discrete set, often a subset of integers, whereas for other problems they can take any value in $\mathbb{R}$. The former are called \textit{discrete optimization problems} and the latter are called \textit{continuous optimization problems}. Continuous optimization problems tend to be easier to solve because the continuity of the functions involved can be used to obtain information about the neighbourhood of the current value.
-    \item \textbf{Constrained optimization}. Sometimes there problem does not require to specify constraints for the variables of the optimization problem. When this is the case we are talking about \textit{unconstrained optimization}. If the problem requires a certain amount of constraints to be fulfilled it is called \textit{constrained optimization}.
+    \item \textbf{Constrained optimization}. Sometimes the problem does not require to specify constraints for the variables of the optimization. When this is the case we are talking about \textit{unconstrained optimization}. If the problem requires a certain constraints to be fulfilled it is called \textit{constrained optimization}.
 \end{itemize}
 
 \begin{figure}[H]
@@ -221,7 +221,7 @@ Moreover, a problem has to meet some more requirements so that it can be written
         \mathbf{A_{eq}} \mathbf{x} = \mathbf{0}, & \mathbf{A_{eq}} \in \mathbb{R}^{r \times n}
     \end{array}
     $$
-    \item Depending on the characteristics of the matrix $\mathbf{Q}$ the problem can be easily solved using polynomial-time algorithms. This is only posible if $\mathbf{Q}$ positive definite, that is, if all its eigenvalues are greater than or equal to $0$. When $\mathbf{Q}$ is positive definite, the problem is a \textit{convex QP problem}. In the contrary case, the problem is \textit{non-convex} and only local minimums can be found.
+    \item Depending on the characteristics of the matrix $\mathbf{Q}$ the problem can be easily solved using polynomial-time algorithms. This is only posible if $\mathbf{Q}$ is   positive definite, that is, if all its eigenvalues are greater than or equal to $0$. When $\mathbf{Q}$ is positive definite, the problem is a \textit{convex QP problem}. In the contrary case, the problem is \textit{non-convex} and only local minimums can be found.
 \end{itemize}
 
 So, the quadratic problem can be formulated as follows:
@@ -238,14 +238,14 @@ So, the quadratic problem can be formulated as follows:
 
 \subsection{Software Libraries}
 
-In this section we describe the software libraries chosen to fulfill the needs that have arised during the implementation of the perception and control parts of this work. \textit{C++} is the language in which all the final code is written, so the libraries mentioned in this section are \textit{C++ Libraries}. Other languages (\textit{Python} and \textit{Matlab}) have also been employed in the code prototyping phase, but as their importance is less prevalent the software components employed in those languages will be mentioned in the specific parts they have been used, in section \ref{s:control}.
+In this section we describe the software libraries chosen to fulfill the needs that have arisen during the implementation of the perception and control parts of this work. \textit{C++} is the language in which all the final code is written, so the libraries mentioned in this section are \textit{C++ Libraries}. Other languages (\textit{Python} and \textit{Matlab}) have also been employed in the code prototyping phase, but as their importance is less prevalent the software components employed in those languages will be mentioned in the specific parts they have been used, in section \ref{s:control}.
 
 \subsubsection{Robot Kinematics}
 \label{sss:KDL}
 
 \textit{The Kinematics and Dynamics Library (KDL)} \cite{KDL} is a framework that provides the tools to describe robot kinematic chains and solutions to the most usual problems: forward and inverse kinematics, jacobian solvers, etc.
 
-For that purpose, \textit{KDL} implements classes that represent kinematic primitives such as vectors, rotations and frames as well as classes that represent the whole kinematic chain, built from segments defined by kinematic primitives. The classes that represent the whole kinematic chain are \textit{KDL::Chain} and \textit{KDL::Tree}, being \textit{KDL::Tree} a container of \textit{KDL::Chain}s. Various generic forward and inverse kinematic algorithms that take objects of these classes are provided also.
+For that purpose, \textit{KDL} implements classes that represent kinematic primitives such as vectors, rotations and frames as well as classes that represent the whole kinematic chain, built from segments defined by kinematic primitives. The classes that represent the whole kinematic chain are \textit{KDL::Chain} and \textit{KDL::Tree}, being \textit{KDL::Tree} a container of \textit{KDL::Chain}s. Various generic forward and inverse kinematic algorithms that take inputs of these classes are provided also.
 
 For more information on the elements mentioned in this section see section \ref{ss:kinematiccontrol}, where the fundamental elements for basic kinematic control are discussed.
 
@@ -262,9 +262,9 @@ ALGLIB \cite{alglib} is a numerical analysis and data processing library, which 
 \section{Perception via proximity sensing}
 \label{s:perception}
 
-Proximity sensors embedded in the artificial skin provide distance information about the surroundings of the robot. These readings are one dimensional distance readings, which means that the readings of isolated individual sensors are not very useful if our objetive is to obtain information about the 3D euclidean space in which the robot's operations take place.
+Proximity sensors embedded in artificial skin provide distance information about the surroundings of the robot. These readings are one dimensional distance readings, which means that the readings of isolated individual sensors are not very useful if our objetive is to obtain information about the 3D euclidean space in which the robot's operations take place.
 
-In this section we describe the method developed in this work to create a 3D point cloud from proximity distance data. The first step is the kinematic calibration of the skin units that contain the proximity sensors. Kinematic calibration makes an automatic estimation of the position and orientation of each sensor. The method is described in section \ref{ss:calibration}. It is a conceptual and not detailed description, since it has been developed in a parallel project and is an essential part that make the control methods employed in this work possible. Section \ref{ss:pointcloud} describes the point cloud creation algorithm. Finally, section \ref{ss:visualization} shows how the obtained data is visualized in \textit{rviz}.
+In this section we describe the method developed in this work to create a 3D point cloud from proximity distance data. The first step is the kinematic calibration of the skin units that contain the proximity sensors. Kinematic calibration makes an automatic estimation of the position and orientation of each sensor. The method is described in section \ref{ss:calibration}. It is a conceptual and not detailed description, since it has been developed in a parallel project and is an essential part that makes the control methods employed in this work possible. Section \ref{ss:pointcloud} describes the point cloud creation algorithm. Finally, section \ref{ss:visualization} shows how the obtained data is visualized in \textit{rviz}.
 
 \subsection{Kinematic Calibration}
 \label{ss:calibration}
@@ -417,7 +417,7 @@ Once we know how to set up the sensors, we need to place them in the robotic arm
     \end{split}
 \end{equation}
 
-Therefore, the proximity sensor macro allows to use cylindrical coordinates to create a new link attached to the surface of the robot that simulates a new proximity sensor. The interface to the macro is defined by the arguments it takes. These is a list of these arguments:
+Therefore, the proximity sensor macro allows to use cylindrical coordinates to create a new link attached to the surface of the robot that simulates a new proximity sensor. The interface to the macro is defined by the arguments it takes. This is a list of the arguments:
 
 \begin{itemize}
     \item \textbf{proximity\_id}: It is important to define a unique name for the link and joint. Trying to use an already defined name will result in an error.
@@ -441,7 +441,7 @@ The actual implementation of the macro can be seen in the following fragment of 
 </joint>
 \end{lstlisting}
 
-We can use this macro to place sensors through a number of rings to cover the body of the robot and simulate the artificial skin. \lstinline[columns=fixed]{radius} specifies the selected link's radius and \lstinline[columns=fixed]{z0} decides de longitudinal position in with we want to place the sensor. With \lstinline[columns=fixed]{radius} and \lstinline[columns=fixed]{z0} fixed, changing \lstinline[columns=fixed]{theta} can place sensors through the entire ring \lstinline[columns=fixed]{radius} and \lstinline[columns=fixed]{z0} define. The following code places 4 equally spaced sensors in a ring located in panda link 3.
+We can use this macro to place sensors through a number of rings to cover the body of the robot and simulate the artificial skin. \lstinline[columns=fixed]{radius} specifies the selected link's radius and \lstinline[columns=fixed]{z0} decides the longitudinal position in which we want to place the sensor. With \lstinline[columns=fixed]{radius} and \lstinline[columns=fixed]{z0} fixed, changing \lstinline[columns=fixed]{theta} can place sensors through the entire ring \lstinline[columns=fixed]{radius} and \lstinline[columns=fixed]{z0} define. The following code places 4 equally spaced sensors in a ring located in panda link 3.
 
 \begin{lstlisting}[caption={Using the proximity macro to place sensors in a robot arm.},captionpos=b]
 <xacro:property name="sensors_per_ring" value="4"/>
@@ -648,7 +648,7 @@ The points are packed in a custom created message called \lstinline{ros_robotic_
 
 Moreover, the points obtained at each of the iterations are saved in a control buffer. This is the portion of the proximity listener that implements this behaviour, where \lstinline{buffer} is a data structure of type \lstinline{std::vector<Eigen::Vector3d>}.
 
-\begin{lstlisting}[caption={Initializer of the ProximityVisualizer class},captionpos=b,label={lst:proximityinitializer}]
+\begin{lstlisting}[caption={Implementation of the buffer in the Proximity Listener},captionpos=b,label={lst:buffer}]
 if (buffer.size() == 10)
 {
     buffer.pop_back();
@@ -743,6 +743,20 @@ In order to visualize the \lstinline{MarkerArray}, a subscription to the topic h
 \label{fig:markerarrayrviz}
 \end{figure}
 
+The points are seen in \textit{rviz} as shown in figure \ref{fig:visualizationpoints}, where a wall in front of the robot is being perceived.
+
+\begin{figure}[H]
+    \caption[Spheres]{
+    Final visualization of the perceived points in \textit{rviz}.
+    }
+    \begin{center}
+    \includegraphics[width=\textwidth]{figs/visualizationpoints.png}
+    \end{center}
+\label{fig:visualizationpoints}
+\end{figure}
+
+
+
 
 
 
@@ -761,11 +775,11 @@ This problem contains several elements required in order to solve the collision 
 \subsubsection{Geometric representation of the kinematic chain of a robot}
 \label{sss:geomrep}
 
-Kinematics is the branch of physics that studies the motion of the bodies. It does that with no consideration of the causes that originate that motion, forces and torques. Kinematics is required and fundamental in robotics for design, analysis, control and simulation.
+Kinematics is the branch of physics that studies the motion of the bodies. It does so with no consideration of the causes that originate the motion, forces, and torques. Kinematics is required and fundamental in robotics for design, analysis, control, and simulation.
 
 In order to study the kinematics of a robot its geometric representation must be defined mathematically beforehand. Rigid body kinematics deals with the problem of studying relative movement of two non-deformable elements by attaching a coordinate frame to each of them. Robot manipulators and robots in general can be seen as a series of rigid links connected by joints. Therefore, attaching a frame to each of the links of a robot in a convenient manner is how robots' geometry is usually represented.
 
-However, there are infinitely many ways in which this 3-dimensional frames can be assigned to the links. The origin and rotation of the frames could be located anywhere in the space as long as its movement was fixed to the respective links.
+However, there are infinitely many ways in which this 3-dimensional frames can be assigned to the links. The origin and rotation of the frames could be located anywhere in space as long as its movement was fixed to the respective links.
 
 That is where conventions for geometric representation come in place. The most well known and extended convention was introduced by Denavit and Hartenberg (DH) in 1955 \cite{hartenberg1955kinematic}. Although there have been numerous adaptations, the representations serve the same purpose and DH parameters are still widely used. In fact, the manufacturer of the robot employed in this work (\ref{ss:panda}) provides DH parameters in its documentation \cite{FrankaEmikaPanda}.
 
@@ -916,7 +930,7 @@ Forward Kinematics are calculated in the robot\_state\_publisher package \cite{r
 \subsubsection{Inverse Kinematics}
 \label{sss:IK}
 
-The inverse Kinematics problem is the opposite to the one of Forward Kinematics (section \ref{sss:FK}). The objective in this case is not to locate the robot's parts once known joint values, but to find the joint values take the end effector (or any other point in the kinematic chain) to a given position and orientation.
+The inverse Kinematics problem is the opposite to the one of Forward Kinematics (section \ref{sss:FK}). The objective in this case is not to locate the robot's parts for known joint values, but to find the joint values given the end effector (or any other point in the kinematic chain) position and orientation.
 
 Given the nature of the homogeneous transformation matrices defined in section \ref{sss:FK}, whose elements contain $\sin$ and $\cos$ functions, the problem requires to solve a set of non linear equations defined by:
 
@@ -924,9 +938,9 @@ $$
 ^{0}\mathbf{T}_{n}(q_{1}, \dots, q_{n}) = (^{0}\mathbf{T}_{n})^{d}
 $$
 
-It is trivial to see that solving the position $^{0} \boldsymbol{p}_{n}(q_{1}, \dots, q_{n}) = (^{0} \boldsymbol{p}_{n})^{d}$ describes $3$ equations. On the other hand, since rotation matrices provide six auxiliary relationships ($3$ coming from the fact that column vectors to have unit length, and $3$ coming from the requirement of its column vectors being mutually orthogonal), and they contain $9$ elements, $9 - 6 = 3$ more equations are coming from $^{0} \mathbf{R}_{n}(q_{1}, \dots, q_{n}) = (^{0} \mathbf{R}_{n})^{d}$.
+It is trivial to see that solving the position $^{0} \boldsymbol{p}_{n}(q_{1}, \dots, q_{n}) = (^{0} \boldsymbol{p}_{n})^{d}$ describes $3$ equations. On the other hand, since rotation matrices provide six auxiliary relationships ($3$ coming from the fact that column vectors to have unit length, and $3$ coming from the requirement of its column vectors being mutually orthogonal), and they contain $9$ elements, $9 - 6 = 3$ more equations coming from $^{0} \mathbf{R}_{n}(q_{1}, \dots, q_{n}) = (^{0} \mathbf{R}_{n})^{d}$.
 
-In order a solution to exist, the desired location and rotation $(^{0}\mathbf{T}_{n})^{d}$ needs to be in the robot's workspace.
+In order for a solution to exist, the desired location and rotation $(^{0}\mathbf{T}_{n})^{d}$ needs to be in the robot's workspace.
 
 A closed form of the equation does not always exist. In fact, in the common case there is no way to do this. Consequently, numerical methods are needed.
 
@@ -955,7 +969,7 @@ The position of the end effector is well defined by the position vector $^{0} \b
 $$\mathbf{t}(t) = \mathbf{f}(t) = \begin{bmatrix} f_{1}(t) \\ f_{2}(t) \\ f_{3}(t) \\ f_{4}(t) \\ f_{5}(t) \\ f_{6}(t) \end{bmatrix}
 $$
 
-$\mathbf{f}$ is a differentiable nonlinear vector function. $f_{1}(t)$, $f_{2}(t)$ and $f_{3}(t)$ describe the position of the end effector and $f_{4}(t)$ $f_{5}(t)$ and $f_{6}(t)$ its orientation.
+$\mathbf{f}$ is a differentiable nonlinear vector function. $f_{1}(t)$, $f_{2}(t)$, and $f_{3}(t)$ describe the position of the end effector and $f_{4}(t)$, $f_{5}(t)$, and $f_{6}(t)$ its orientation.
 
 Thus, the rate of change of this parameters is given by $\mathbf{\dot{t}}(t)$,
 
@@ -1034,7 +1048,7 @@ $$
 
 As described in section \ref{sss:geomrep}, $^{0}\mathbf{z}_{i-1}$ is joint $i$'s $z$ axis, which is a unitary vector in the direction of the joint. $^{0}\mathbf{z}_{i-1}$ coincides both the direction in which a prismatic joint contributes to the end effector velocity $\mathbf{v}_{\text{end effector}}$ and with the contribution of a revolute joint to the angular velocity of the end effector $\mbox{\boldmath$\omega$}_{\text{end effector}}$. The magnitude $\mathbf{z}_{i-1} \times ^{i-1}\boldsymbol{p}_{\text{end effector}}$ is due to the $\mbox{\boldmath$\omega$} \times \overrightarrow{\mathbf{OP}}$ part in equation \ref{eq:velfield}. It is obvious that the contribution of a prismatic joint to $\mbox{\boldmath$\omega$}_{\text{end effector}}$ is $\mathbf{0}$.
 
-In section \ref{sss:KDL} we presented KDL as the library we would use to deal with problems dealing with fundamental robot kinematics. This is how the robotic jacobian is obtained in KDL:
+In section \ref{sss:KDL} we presented KDL as the library we use to deal with problems fundamental to robot kinematics. This is how the robotic jacobian is obtained in KDL:
 
 \begin{lstlisting}[caption={Implementation of the function \lstinline{computeJacobian}.},captionpos=b]
 Eigen::MatrixXd KDLSolver::computeJacobian
@@ -1070,7 +1084,7 @@ Later, in section \ref{ss:optimization} we will upgrade this function so that it
 \label{sss:IIK}
 As defined at the beginning of \ref{ss:kinematiccontrol}, the kinematic control problem deals with the problem of obtaining a joint space trajectory $\mathbf{q}(t)$ that satisfies a desired trajectory in the cartesian space $\mathbf{x}(t)$. Several approaches can be taken in order to find a solution to this problem, but according to \cite{siciliano1990kinematic}, the most relevant ones for redundant manipulators (sections \ref{ss:panda} and \ref{sss:FK}) solve the problem at the joint velocity level.
 
-Therefore, joint space velocities $\mathbf{\dot{q}}(t)$ that result in end effector velocities $\mathbf{\dot{x}_{d}}$ that satisfy a desired trajectory in the cartesian space $\mathbf{x_{d}}(t)$ must be found. This is the opposite problem to the one presented in the previous section (\ref{sss:FIK}) that was resolved in equation \ref{eq:FIK}. The equation presents a linear system of equations in the unknowns ${\mathbf{\dot{q}}}$. This contrasts with the fact that, as stated in section \ref{sss:IK}, the Inverse Kinematics problem is non-linear. The jacobian ${\mathbf{J}(\mathbf{{q}})}$ is a local linearization of the instantaneous problem, which is valid only for the specific time instant $t$ and joint values $\mathbf{{q}}$ for which it was calculated. In the general task that than be identified by $m$ variables:
+Therefore, joint space velocities $\mathbf{\dot{q}}(t)$ that result in end effector velocities $\mathbf{\dot{x}_{d}}$ that satisfy a desired trajectory in the cartesian space $\mathbf{x_{d}}(t)$ must be found. This is the opposite problem to the one presented in the previous section (\ref{sss:FIK}) that was resolved in equation \ref{eq:FIK}. The equation presents a linear system of equations in the unknowns ${\mathbf{\dot{q}}}$. This contrasts with the fact that, as stated in section \ref{sss:IK}, the Inverse Kinematics problem is non-linear. The jacobian ${\mathbf{J}(\mathbf{{q}})}$ is a local linearization of the instantaneous problem, which is valid only for the specific time instant $t$ and joint values $\mathbf{{q}}$ for which it was calculated. In the general task this is represented by $m$ variables:
 
 \begin{equation}
     \label{eq:linearEquations}
@@ -1163,7 +1177,7 @@ In table \ref{tab:numbersolutions}, we can see that all the possible situations 
 
 Summing up, the kinematic control problem has been defined as a set of linear equations (equation \ref{eq:linearEquations}) and the existance of the solutions has been studied until now. Next, we must find a solution to the set of equations.
 
-The most widely tool used to find the solution is the \textbf{Moore-Penrose pseudoinverse} of the jacobian $\mathbf{J}^{+}(\mathbf{{q}})$, where $\mathbf{J}^{+}(\mathbf{{q}}) = \mathbf{J}^{\top}\left(\mathbf{{q}})
+The most widely used tool to find this solution is the \textbf{Moore-Penrose pseudoinverse} of the jacobian $\mathbf{J}^{+}(\mathbf{{q}})$, where $\mathbf{J}^{+}(\mathbf{{q}}) = \mathbf{J}^{\top}\left(\mathbf{{q}})
 (\mathbf{J}(\mathbf{{q}}) \mathbf{J}^{\top}(\mathbf{{q}})\right)^{-1}$.
 The complete set of solutions can be described as:
 
@@ -1185,7 +1199,7 @@ is the minimum norm solution to the least squares problem.
 
 However, there are some problems with this solution. As mentioned before, $\mathbf{J}(\mathbf{{q}})$ not being full rank implies the control over one of the motion axes is lost. This happens at certain joint configurations $\mathbf{{q}}$ called singularities. Not only is reaching one of these configurations a problem, but near to singularity configurations are also problematic. This is true because even though a solution is possible, at these near to singularity configurations excessive joint space velocities are required to move the end effector in the axis that is close from being uncontrolable.
 
-The reader may think that it would be useful to have a measure of when one of how close the configuration of the robot is from a singularity. One possible solution is the one introduced by \cite{yoshikawa1985dynamic}:
+The reader may think that it would be useful to have a measure of how close the configuration of the robot is from a singularity. One possible solution is the one introduced by \cite{yoshikawa1985dynamic}:
 
 $$\sqrt{\operatorname{det}(\mathbf{J^{\intercal}} \cdot \mathbf{J})}$$
 
@@ -1214,7 +1228,7 @@ This function approaches $0$ as the joints are close to their mid range value. T
 \subsubsection{End effector Position Control through Inverse Instantaneous Kinematics}
 \label{sss:eepositioncontrol}
 
-In this section we present a simple algorithm that moves the end effector to a desired position in the cartesian space, shown in the function \lstinline[columns=fixed]{moveToPosition} in listing \ref{code:noAvoidance}. The mathematical elements presented in previous sections are an essential part of the code.
+In this section we present a simple algorithm that moves the end effector to a desired position in cartesian space, shown in the function \lstinline[columns=fixed]{moveToPosition} in listing \ref{code:noAvoidance}. The mathematical elements presented in previous sections are an essential part of the code.
 
 \begin{lstlisting}[caption={CartesianPositionController.cpp},captionpos=b, label={code:noAvoidance}]
 void moveToPosition(const Eigen::Vector3d xd)
@@ -1259,7 +1273,7 @@ Eigen::VectorXd secondaryTaskFunctionGradient(Eigen::VectorXd q)
 }
 \end{lstlisting}
 
-Note that the velocity we command at every control loop is $()\mathbf{x_d} - \mathbf{x})$, that is a vector that points from the current end effector possition to the desired objective point. This means that the trajectory of the end effector will be a straight line that goes from the initial point to the objective point.
+Note that the velocity we command at every control loop is $(\mathbf{x_d} - \mathbf{x})$, that is a vector that points from the current end effector possition to the desired objective point. This means that the trajectory of the end effector will be a straight line that goes from the initial point to the objective point.
 
 This simple method will be used as the base desired velocity for all the avoidance control methods.
 
@@ -1279,7 +1293,7 @@ The body control points are treated as cartesian constraints that are translated
 \subsubsection{Potential field method approach applied to the effector obstacle avoidance}
 \label{sss:flaccorepulsive}
 
-Let $\mathbf{\dot{x}_d}$ be the desired velocity for the end effector. This velocity can be coming from different sources, but one example is the velocity that points to the next point in a cartesian position control\ref{sss:eepositioncontrol}. The location of the end effector is described by the position vector relative to the base frame $\mathbf{x_{ee}}$. In addition, the robot is surrounded by a set of $m$ obstacles, represented by their position vectors relative to the base frame of the robot $\mathbf{h_i}$, for $i=1,2, \ldots, m$.
+Let $\mathbf{\dot{x}_d}$ be the desired velocity for the end effector. This velocity can be coming from different sources, but one example is the velocity that points to the next point in a cartesian position control \ref{sss:eepositioncontrol}. The location of the end effector is described by the position vector relative to the base frame $\mathbf{x_{ee}}$. In addition, the robot is surrounded by a set of $m$ obstacles, represented by their position vectors relative to the base frame of the robot $\mathbf{h_i}$, for $i=1,2, \ldots, m$.
 
 The algorithm presented in this section will adapt this velocity to be reactive to obstacles, thanks to the generation of an artificial repulsive vector $\mathbf{\dot{x}_{rep}}$. This repulsive vector will be used to generate the final control velocity $\mathbf{\dot{x}_c}$:
 
@@ -1315,7 +1329,7 @@ The direction of the vector is exactly the same as that of $\mathbf{d_{min}}$. T
     \item $\alpha$ defines the form of the curve. As $\alpha$ tends to $\infty$, the shape of the curve tends to that of of a step function.
 \end{itemize}
 
-\href{https://www.desmos.com/calculator/9f1iszpe5j}{This interactive graph} allows fine tuning the parameters.
+\href{https://www.desmos.com/calculator/9f1iszpe5j}{This interactive graph} allows fine tuning of the parameters.
 
 
 
@@ -1348,7 +1362,7 @@ $$
 
 $\mathbf{J_{c_i}}$ is the partial jacobian of the kinematic chain that goes from the base to $\mathbf{c_{j}}$. Not all the joints necesarily influence the movement of that control point. For instance, if the control point is located in link 2 (see Denavit-Hartenberg notation in \ref{sss:geomrep} for more information on link numbering) only joints $1$ and $2$ affect the movement of that point. Therefore, the size of $\mathbf{J_{c_i}}$ and, in consequence, of $\mathbf{s}$ depend on the location of the specific control point we are talking about.
 
-The $i$th value of $\mathbf{s} \in \mathbb{R}^{n \times 1}$ represents the influence the movement of that specific joint $i$ has in moving $\mathbf{c_{j}}$ as indicated by the vector $\frac{\mathbf{d_{min}}}{\|\mathbf{d_{min}}\|}$. The sign of $s_i$ represents the direction of rotation of that joint that leads to that movement. If $s_i > 0$, moving that joint counterclockwise would contribute to a collision. On the other hand, if $s_i < 0$ hte clockwise rotation of the joint is the one that has to be limited.
+The $i$th value of $\mathbf{s} \in \mathbb{R}^{n \times 1}$ represents the influence on the movement of that specific joint $i$ has in moving $\mathbf{c_{j}}$ as indicated by the vector $\frac{\mathbf{d_{min}}}{\|\mathbf{d_{min}}\|}$. The sign of $s_i$ represents the direction of rotation of that joint that leads to that movement. If $s_i > 0$, moving that joint counterclockwise would contribute to a collision. On the other hand, if $s_i < 0$ hte clockwise rotation of the joint is the one that has to be limited.
 
 The amount by which joint velocities are limited depends on the value of $f$ and the physical limits of the robot (joint velocity limits impose that $-\mathbf{\dot{q}_{\max}} \leq \mathbf{\dot{q}} \leq \mathbf{\dot{q}_{\max}}$, see \ref{ss:panda}):
 
